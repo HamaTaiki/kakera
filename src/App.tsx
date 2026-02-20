@@ -25,6 +25,7 @@ interface ProgressEntry {
 function AuthView({ onAuthSuccess }: { onAuthSuccess: () => void }) {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +40,15 @@ function AuthView({ onAuthSuccess }: { onAuthSuccess: () => void }) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       } else {
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              display_name: username
+            }
+          }
+        });
         if (error) throw error;
         alert('確認用メールを送信しました。メールを確認してログインしてください。');
       }
@@ -74,9 +83,23 @@ function AuthView({ onAuthSuccess }: { onAuthSuccess: () => void }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="input-field"
+              placeholder="example@email.com"
               required
             />
           </div>
+          {!isLogin && (
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">ユーザー名</label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="input-field"
+                placeholder="あなたの名前"
+                required
+              />
+            </div>
+          )}
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">パスワード</label>
             <input
@@ -392,10 +415,13 @@ export default function App() {
           >
             <Diamond size={22} fill="currentColor" />
           </motion.div>
-          <div>
+          <div className="flex flex-col">
             <h1 className="text-2xl font-black text-slate-900 tracking-tighter group-hover:text-indigo-600 transition-colors">
               Kakera
             </h1>
+            <span className="text-[10px] font-bold text-slate-400 -mt-1 uppercase tracking-widest">
+              {user?.user_metadata?.display_name || 'Guest User'}'s notebook
+            </span>
           </div>
         </div>
         <div className="flex items-center gap-4">
