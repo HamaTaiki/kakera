@@ -620,11 +620,21 @@ export default function App() {
                   <Loader2 className="animate-spin text-indigo-200" size={48} />
                 </div>
               ) : projects.length === 0 ? (
-                <div className="glass-card py-24 text-center">
-                  <Diamond className="mx-auto mb-6 text-slate-200" size={64} />
-                  <p className="text-slate-400 text-lg mb-8">まだ箱がありません。</p>
-                  <button onClick={() => setShowCreateProject(true)} className="secondary-button mx-auto">
-                    最初の箱を作る
+                <div
+                  onClick={() => setShowCreateProject(true)}
+                  className="glass-card py-20 px-8 text-center cursor-pointer hover:bg-white transition-all group border-2 border-dashed border-slate-100 hover:border-indigo-200"
+                >
+                  <div className="w-20 h-20 rounded-3xl bg-indigo-50 flex items-center justify-center text-indigo-400 mx-auto mb-8 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                    <FolderPlus size={40} />
+                  </div>
+                  <h4 className="text-2xl font-bold text-slate-900 mb-4">まだ創作箱がありません</h4>
+                  <p className="text-slate-500 max-w-md mx-auto mb-10 leading-relaxed text-lg">
+                    まずは、今のプロジェクトやアイデアを<br />
+                    入れるための「箱」を名前をつけて作りましょう。
+                  </p>
+                  <button className="primary-button mx-auto py-5 px-12 text-lg">
+                    <Plus size={24} />
+                    <span>最初の箱を作る</span>
                   </button>
                 </div>
               ) : (
