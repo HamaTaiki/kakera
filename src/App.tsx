@@ -10,6 +10,7 @@ interface Project {
   description: string;
   created_at: string;
   share_id?: string;
+  share_passphrase?: string;
 }
 
 interface Reaction {
@@ -296,6 +297,9 @@ export default function App() {
   const [showUpload, setShowUpload] = useState(false);
   const [showCreateProject, setShowCreateProject] = useState(false);
 
+  const [enteredPassphrase, setEnteredPassphrase] = useState('');
+  const [isPassphraseVerified, setIsPassphraseVerified] = useState(false);
+
   const [newProjectName, setNewProjectName] = useState('');
   const [newProjectDesc, setNewProjectDesc] = useState('');
 
@@ -347,7 +351,10 @@ export default function App() {
       window.history.replaceState({}, '', window.location.pathname);
     } else {
       setSelectedProject(data);
-      fetchEntries(data.id);
+      if (!data.share_passphrase) {
+        setIsPassphraseVerified(true);
+        fetchEntries(data.id);
+      }
       setView('project');
     }
     setLoading(false);
@@ -485,6 +492,21 @@ export default function App() {
     const url = `${window.location.origin}${window.location.pathname}?share=${shareId}`;
     navigator.clipboard.writeText(url);
     alert('共有リンクをコピーしました！知り合いに送ってみましょう。');
+  };
+
+  const handleUpdatePassphrase = async (projectId: string, passphrase: string) => {
+    const { error } = await supabase
+      .from('projects')
+      .update({ share_passphrase: passphrase || null })
+      .eq('id', projectId);
+
+    if (error) {
+      alert(`合言葉の設定に失敗しました: ${error.message}`);
+    } else {
+      setSelectedProject(prev => prev ? { ...prev, share_passphrase: passphrase } : null);
+      setProjects(prev => prev.map(p => p.id === projectId ? { ...p, share_passphrase: passphrase } : p));
+      alert(passphrase ? '秘密の合言葉を設定しました。' : '合言葉を解除しました。');
+    }
   };
 
   const handleAddReaction = async (entryId: string, content: string) => {
@@ -782,6 +804,24 @@ export default function App() {
                       <span>共有リンクをコピー</span>
                     </button>
                     {!isSharedView && (
+                      <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-xl border border-slate-100">
+                        <input
+                          type="text"
+                          placeholder="秘密の合言葉（空で解除）"
+                          defaultValue={selectedProject.share_passphrase || ''}
+                          onBlur={(e) => {
+                            if (e.target.value !== (selectedProject.share_passphrase || '')) {
+                              handleUpdatePassphrase(selectedProject.id, e.target.value);
+                            }
+                          }}
+                          className="bg-transparent border-none text-xs font-bold px-3 py-1 focus:outline-none w-40"
+                        />
+                        <div className="p-1.5 text-slate-400" title="この合言葉を知っている人だけが中身を見られます">
+                          <AlertCircle size={14} />
+                        </div>
+                      </div>
+                    )}
+                    {!isSharedView && (
                       <button
                         onClick={() => setShowUpload(true)}
                         className="primary-button py-2 px-5 text-sm"
@@ -794,29 +834,73 @@ export default function App() {
                 </div>
               </div>
 
-              {loading ? (
-                <div className="flex justify-center py-20">
-                  <Loader2 className="animate-spin text-indigo-200" size={48} />
-                </div>
-              ) : entries.length === 0 ? (
-                <div className="glass-card py-24 text-center border-dashed bg-transparent border-slate-200 shadow-none">
-                  <Gem className="mx-auto mb-6 text-slate-200" size={64} />
-                  <p className="text-slate-400 text-lg mb-8">まだカケラがありません。輝く断片を残しましょう。</p>
-                  <button onClick={() => setShowUpload(true)} className="secondary-button mx-auto">
-                    カケラを記録する
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {entries.map((entry) => (
-                    <ProgressCard
-                      key={entry.id}
-                      entry={entry}
-                      onDelete={isSharedView ? undefined : () => handleDeleteEntry(entry.id)}
-                      onReact={(emoji) => handleAddReaction(entry.id, emoji)}
+              {!isPassphraseVerified && isSharedView && selectedProject?.share_passphrase && (
+                <div className="flex flex-col items-center justify-center py-20 px-6">
+                  <div className="w-16 h-16 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 mb-6 border border-slate-100">
+                    <AlertCircle size={32} />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">秘密の合言葉が必要です</h3>
+                  <p className="text-slate-500 mb-8 text-center max-w-sm">
+                    このプロジェクトは保護されています。<br />合言葉を入力して中身を確認してください。
+                  </p>
+                  <div className="flex w-full max-w-xs gap-2">
+                    <input
+                      type="password"
+                      value={enteredPassphrase}
+                      onChange={(e) => setEnteredPassphrase(e.target.value)}
+                      placeholder="合言葉を入力..."
+                      className="input-field py-3 text-center"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && enteredPassphrase === selectedProject.share_passphrase) {
+                          setIsPassphraseVerified(true);
+                          fetchEntries(selectedProject.id);
+                        }
+                      }}
                     />
-                  ))}
+                    <button
+                      onClick={() => {
+                        if (enteredPassphrase === selectedProject.share_passphrase) {
+                          setIsPassphraseVerified(true);
+                          fetchEntries(selectedProject.id);
+                        } else {
+                          alert('合言葉が正しくありません。');
+                        }
+                      }}
+                      className="primary-button py-3 px-6"
+                    >
+                      開く
+                    </button>
+                  </div>
                 </div>
+              )}
+
+              {(isPassphraseVerified || !isSharedView) && (
+                <>
+                  {loading ? (
+                    <div className="flex justify-center py-20">
+                      <Loader2 className="animate-spin text-indigo-200" size={48} />
+                    </div>
+                  ) : entries.length === 0 ? (
+                    <div className="glass-card py-24 text-center border-dashed bg-transparent border-slate-200 shadow-none">
+                      <Gem className="mx-auto mb-6 text-slate-200" size={64} />
+                      <p className="text-slate-400 text-lg mb-8">まだカケラがありません。輝く断片を残しましょう。</p>
+                      <button onClick={() => setShowUpload(true)} className="secondary-button mx-auto">
+                        カケラを記録する
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {entries.map((entry) => (
+                        <ProgressCard
+                          key={entry.id}
+                          entry={entry}
+                          onDelete={isSharedView ? undefined : () => handleDeleteEntry(entry.id)}
+                          onReact={(emoji) => handleAddReaction(entry.id, emoji)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </motion.div>
           )}
