@@ -572,7 +572,7 @@ export default function App() {
                       <div className="pl-6 border-l-4 border-indigo-100 py-2">
                         <Quote className="text-indigo-200 mb-4" size={32} />
                         <p className="text-slate-900 font-bold">
-                          <span className="inline-block">創作の本当の価値は、完成品の中にではなく</span><br />
+                          <span className="inline-block">創作の本当の価値は、完成品の中だけでなく</span><br />
                           <span className="inline-block">そこに至るまでの「カケラ」のような</span>
                           <span className="inline-block">日々に宿っています。</span>
                         </p>
