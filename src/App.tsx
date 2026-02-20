@@ -430,7 +430,7 @@ export default function App() {
 
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
+      const fileName = `${crypto.randomUUID()}.${fileExt}`;
       const filePath = `${uploadType}s/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
@@ -468,11 +468,19 @@ export default function App() {
       setShowUpload(false);
       setNotes('');
       setFile(null);
-      setPreviewUrl(null);
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+        setPreviewUrl(null);
+      }
       setUploadType(null);
+
+      // input要素をリセット
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     } catch (error: any) {
-      console.error('Error uploading:', error);
-      alert(`アップロード失敗: ${error.message}`);
+      console.error('Detailed Upload Error:', error);
+      alert(`アップロード失敗: ${error.message || '通信エラーが発生しました'}`);
     } finally {
       setUploading(false);
     }
