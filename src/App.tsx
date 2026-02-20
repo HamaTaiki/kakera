@@ -376,7 +376,7 @@ export default function App() {
     const { data, error } = await supabase
       .from('projects')
       .insert([newProject])
-      .select('id, name, description, created_at, user_id, share_id');
+      .select('id, name, description, created_at, user_id');
 
     if (error) {
       alert(`エラー: ${error.message}`);
@@ -386,7 +386,7 @@ export default function App() {
         window.history.replaceState({}, '', window.location.pathname);
       }
 
-      const createdProject = data[0];
+      const createdProject = { ...data[0], share_id: newProject.share_id };
       setProjects(prev => [createdProject, ...prev]);
       setShowCreateProject(false);
       setNewProjectName('');
