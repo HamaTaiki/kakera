@@ -435,7 +435,10 @@ export default function App() {
 
       const { error: uploadError } = await supabase.storage
         .from('progress_files')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          contentType: file.type,
+          upsert: false
+        });
 
       if (uploadError) throw uploadError;
 
