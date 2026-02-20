@@ -14,14 +14,6 @@ interface Project {
   share_passphrase?: string;
 }
 
-interface Reaction {
-  id: string;
-  entry_id: string;
-  content: string;
-  type: 'emoji' | 'text';
-  created_at: string;
-}
-
 interface ProgressEntry {
   id: string;
   type: 'image' | 'audio';
@@ -29,7 +21,6 @@ interface ProgressEntry {
   notes: string;
   timestamp: number;
   project_id: string;
-  reactions?: Reaction[];
 }
 
 // --- Components ---
@@ -185,7 +176,7 @@ function ProjectCard({ project, onClick, onDelete }: { project: Project; onClick
   );
 }
 
-function ProgressCard({ entry, onDelete, onReact }: { entry: ProgressEntry; onDelete?: () => void; onReact: (emoji: string) => void }) {
+function ProgressCard({ entry, onDelete }: { entry: ProgressEntry; onDelete?: () => void }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -200,8 +191,6 @@ function ProgressCard({ entry, onDelete, onReact }: { entry: ProgressEntry; onDe
       setIsPlaying(!isPlaying);
     }
   };
-
-  const emojis = ['✨', '💎', '🚀', '💖', '👏'];
 
   return (
     <motion.div
@@ -251,33 +240,6 @@ function ProgressCard({ entry, onDelete, onReact }: { entry: ProgressEntry; onDe
             <p className="text-slate-700 leading-relaxed whitespace-pre-wrap text-lg font-medium">
               {entry.notes || 'メモはありません。'}
             </p>
-          </div>
-          <div className="mt-8 pt-6 border-t border-slate-100">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                {emojis.map(emoji => (
-                  <button
-                    key={emoji}
-                    onClick={() => onReact(emoji)}
-                    className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-sm hover:bg-white hover:shadow-md transition-all active:scale-90"
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
-
-              {entry.reactions && entry.reactions.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(
-                    entry.reactions.reduce((acc, r) => ({ ...acc, [r.content]: (acc[r.content] || 0) + 1 }), {} as Record<string, number>)
-                  ).map(([content, count]) => (
-                    <span key={content} className="bg-indigo-50 text-indigo-600 text-[10px] font-bold px-2 py-1 rounded-lg">
-                      {content} {count}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
         </div>
       </div>
@@ -400,7 +362,7 @@ export default function App() {
   const fetchEntries = async (projectId: string) => {
     const { data, error } = await supabase
       .from('progress_entries')
-      .select('*, reactions(*)')
+      .select('*')
       .eq('project_id', projectId)
       .order('timestamp', { ascending: false });
 
@@ -546,23 +508,6 @@ export default function App() {
       setSelectedProject(prev => prev ? { ...prev, share_passphrase: passphrase } : null);
       setProjects(prev => prev.map(p => p.id === projectId ? { ...p, share_passphrase: passphrase } : p));
       alert(passphrase ? '秘密の合言葉を設定しました。' : '合言葉を解除しました。');
-    }
-  };
-
-  const handleAddReaction = async (entryId: string, content: string) => {
-    const { error } = await supabase
-      .from('reactions')
-      .insert([{
-        entry_id: entryId,
-        content: content,
-        type: 'emoji',
-        user_id: user?.id || null
-      }]);
-
-    if (error) {
-      console.error('Error adding reaction:', error);
-    } else if (selectedProject) {
-      fetchEntries(selectedProject.id);
     }
   };
 
@@ -935,7 +880,6 @@ export default function App() {
                           key={entry.id}
                           entry={entry}
                           onDelete={isSharedView ? undefined : () => handleDeleteEntry(entry.id)}
-                          onReact={(emoji) => handleAddReaction(entry.id, emoji)}
                         />
                       ))}
                     </div>
