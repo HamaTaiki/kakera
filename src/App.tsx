@@ -9,6 +9,7 @@ interface Project {
   name: string;
   description: string;
   created_at: string;
+  user_id: string; // オーナー判定に必要
   share_id?: string;
   share_passphrase?: string;
 }
@@ -310,35 +311,49 @@ export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // 共有リンクのチェック
-    const params = new URLSearchParams(window.location.search);
-    const shareId = params.get('share');
+    const init = async () => {
+      setLoading(true);
 
-    if (shareId) {
-      handleLoadSharedProject(shareId);
-    }
+      // 1. セッション取得
+      const { data: { session } } = await supabase.auth.getSession();
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
 
-    // 最初のセッション取得
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user && !shareId) fetchProjects();
-    });
+      // 2. 共有リンクのチェック
+      const params = new URLSearchParams(window.location.search);
+      const shareId = params.get('share');
+
+      if (shareId) {
+        await handleLoadSharedProject(shareId, currentUser);
+      } else if (currentUser) {
+        await fetchProjectsWithUser(currentUser);
+      }
+
+      setLoading(false);
+    };
+
+    init();
 
     // 認証状態の変化を監視
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user && !shareId) {
-        fetchProjects();
-      } else if (!session?.user && !shareId) {
-        setProjects([]);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) {
+        // 現在共有表示中でない場合、または自分がオーナーの場合にプロジェクト一覧を更新
+        fetchProjectsWithUser(currentUser);
+      } else {
+        const params = new URLSearchParams(window.location.search);
+        if (!params.get('share')) {
+          setProjects([]);
+          setView('home');
+        }
       }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleLoadSharedProject = async (shareId: string) => {
-    setLoading(true);
+  const handleLoadSharedProject = async (shareId: string, currentUser: User | null) => {
     const { data, error } = await supabase
       .from('projects')
       .select('*')
@@ -351,22 +366,27 @@ export default function App() {
       window.history.replaceState({}, '', window.location.pathname);
     } else {
       setSelectedProject(data);
-      if (!data.share_passphrase) {
+      // 所有者の場合は自動的に認証済みとする
+      if (!data.share_passphrase || (currentUser && data.user_id === currentUser.id)) {
         setIsPassphraseVerified(true);
-        fetchEntries(data.id);
+        await fetchEntries(data.id);
+      } else {
+        setIsPassphraseVerified(false);
       }
       setView('project');
     }
-    setLoading(false);
   };
 
-  const fetchProjects = async () => {
-    if (!user) return;
+  const fetchProjects = () => {
+    if (user) fetchProjectsWithUser(user);
+  };
+
+  const fetchProjectsWithUser = async (currentUser: User) => {
     setLoading(true);
     const { data, error } = await supabase
       .from('projects')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', currentUser.id)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -378,7 +398,6 @@ export default function App() {
   };
 
   const fetchEntries = async (projectId: string) => {
-    setLoading(true);
     const { data, error } = await supabase
       .from('progress_entries')
       .select('*, reactions(*)')
@@ -390,7 +409,6 @@ export default function App() {
     } else {
       setEntries(data || []);
     }
-    setLoading(false);
   };
 
   const handleCreateProject = async () => {
@@ -403,12 +421,18 @@ export default function App() {
 
     if (error) {
       alert(`エラー: ${error.message}`);
-    } else {
-      await fetchProjects();
+    } else if (data && data[0]) {
+      // URLから共有IDを削除して、自分のダッシュボードモードに切り替える
+      if (window.location.search.includes('share=')) {
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+
+      const createdProject = data[0];
+      setProjects(prev => [createdProject, ...prev]);
       setShowCreateProject(false);
       setNewProjectName('');
       setNewProjectDesc('');
-      if (data) handleSelectProject(data[0]);
+      handleSelectProject(createdProject);
     }
     setUploading(false);
   };
@@ -417,10 +441,20 @@ export default function App() {
     setSelectedProject(project);
     fetchEntries(project.id);
     setView('project');
+    // 所有者の場合は常に認証済みとする
+    if (!project.share_passphrase || (user && project.user_id === user.id)) {
+      setIsPassphraseVerified(true);
+    } else {
+      setIsPassphraseVerified(false);
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleBack = () => {
+    // 共有ビューから自分のダッシュボードに戻る際、URLパラメータをクリアする
+    if (window.location.search.includes('share=')) {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
     setView('home');
     setSelectedProject(null);
     setEntries([]);
@@ -465,13 +499,19 @@ export default function App() {
         user_id: user?.id
       };
 
-      const { error: dbError } = await supabase
+      const { data: uploadData, error: dbError } = await supabase
         .from('progress_entries')
-        .insert([newEntry]);
+        .insert([newEntry])
+        .select('*, reactions(*)');
 
       if (dbError) throw dbError;
 
-      await fetchEntries(selectedProject.id);
+      if (uploadData && uploadData[0]) {
+        setEntries(prev => [uploadData[0], ...prev]);
+      } else {
+        await fetchEntries(selectedProject.id);
+      }
+
       setShowUpload(false);
       setNotes('');
       setFile(null);
@@ -558,7 +598,7 @@ export default function App() {
     }
   };
 
-  if (!user) {
+  if (!user && !isSharedView) {
     return <AuthView onAuthSuccess={fetchProjects} />;
   }
 
