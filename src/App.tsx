@@ -558,31 +558,33 @@ export default function App() {
                       <span className="text-sm font-bold uppercase tracking-[0.2em]">Our Thought</span>
                     </div>
                     <h3 className="text-3xl md:text-5xl font-black text-slate-900 mb-10 leading-tight tracking-tight uppercase">
-                      宝石は、磨かれる前の<br />
-                      原石から生まれる。
+                      「完璧な作品」の陰に、<br />
+                      隠したままの想いはありませんか？
                     </h3>
 
                     <div className="space-y-8 text-slate-600 text-lg md:text-xl leading-relaxed font-medium">
                       <p>
-                        <span className="inline-block">SNSで目にする「完成品」は</span>
-                        <span className="inline-block">氷山の一角にすぎません。</span><br />
-                        <span className="inline-block">その下にある、無数の試行錯誤こそが</span>
-                        <span className="inline-block">創作の本当の正体です。</span>
+                        <span className="inline-block">世の中に溢れているのは、</span>
+                        <span className="inline-block">磨き上げられた「完成品」ばかり。</span><br />
+                        <span className="inline-block">それを見て、自分の未完成なプロセスを</span>
+                        <span className="inline-block">恥じて、隠してしまっていませんか？</span>
                       </p>
                       <div className="pl-6 border-l-4 border-indigo-100 py-2">
                         <Quote className="text-indigo-200 mb-4" size={32} />
                         <p className="text-slate-900 font-bold">
-                          <span className="inline-block">Kakeraは、結果だけを追う世界から</span><br />
-                          <span className="inline-block">あなたを解放します。</span>
+                          <span className="inline-block">創作の本当の価値は、完成品の中にではなく</span><br />
+                          <span className="inline-block">そこに至るまでの「カケラ」のような</span>
+                          <span className="inline-block">日々に宿っています。</span>
                         </p>
                       </div>
                       <p>
-                        <span className="inline-block">途中の迷いも、失敗も。</span><br />
-                        <span className="inline-block">すべては未来の輝きに繋がる</span>
-                        <span className="inline-block">大切な「カケラ」なのです。</span>
+                        <span className="inline-block">迷い、悩み、挑戦した証。</span><br />
+                        <span className="inline-block">Kakeraは、未完成な美しさを</span>
+                        <span className="inline-block">「いま、ここにある価値」として</span>
+                        <span className="inline-block">愛でるための場所です。</span>
                       </p>
                       <p>
-                        <span className="inline-block">あなたの何気ない一歩が、</span>
+                        <span className="inline-block">あなたのひたむきなプロセスが、</span>
                         <span className="inline-block">いつか誰かの光になるように。</span>
                       </p>
                     </div>
@@ -591,17 +593,17 @@ export default function App() {
                       <div className="glass-card p-6 bg-indigo-50/30 border-none">
                         <Zap size={24} className="text-indigo-500 mb-4" />
                         <h4 className="font-bold text-slate-900 mb-2">記録する</h4>
-                        <p className="text-sm text-slate-500">その瞬間の音、景色、心の揺れをありのままに。</p>
+                        <p className="text-sm text-slate-500">飾らない、剥き出しのアイデアをありのままに。</p>
                       </div>
                       <div className="glass-card p-6 bg-rose-50/30 border-none">
                         <Compass size={24} className="text-rose-500 mb-4" />
                         <h4 className="font-bold text-slate-900 mb-2">見つける</h4>
-                        <p className="text-sm text-slate-500">誰かの試行錯誤から、新しい創作の種を。</p>
+                        <p className="text-sm text-slate-500">完璧な作品にはない、人間らしい葛藤を。</p>
                       </div>
                       <div className="glass-card p-6 bg-slate-50 border-none">
                         <Sparkles size={24} className="text-amber-500 mb-4" />
                         <h4 className="font-bold text-slate-900 mb-2">輝かせる</h4>
-                        <p className="text-sm text-slate-500">カケラたちが集まり、一つの物語が動き出す。</p>
+                        <p className="text-sm text-slate-500">未完成なカケラが、誰かの力に変わる。</p>
                       </div>
                     </div>
                   </motion.div>
@@ -629,8 +631,8 @@ export default function App() {
                   </div>
                   <h4 className="text-2xl font-bold text-slate-900 mb-4">まだ創作箱がありません</h4>
                   <p className="text-slate-500 max-w-md mx-auto mb-10 leading-relaxed text-lg">
-                    まずは、今のプロジェクトやアイデアを<br />
-                    入れるための「箱」を名前をつけて作りましょう。
+                    世に出す前の、あなただけの大切な「プロセス」を<br />
+                    収めるための箱を、まずは名前をつけて作りましょう。
                   </p>
                   <button className="primary-button mx-auto py-5 px-12 text-lg">
                     <Plus size={24} />
