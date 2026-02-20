@@ -9,6 +9,15 @@ interface Project {
   name: string;
   description: string;
   created_at: string;
+  share_id?: string;
+}
+
+interface Reaction {
+  id: string;
+  entry_id: string;
+  content: string;
+  type: 'emoji' | 'text';
+  created_at: string;
 }
 
 interface ProgressEntry {
@@ -18,6 +27,7 @@ interface ProgressEntry {
   notes: string;
   timestamp: number;
   project_id: string;
+  reactions?: Reaction[];
 }
 
 // --- Components ---
@@ -173,7 +183,7 @@ function ProjectCard({ project, onClick, onDelete }: { project: Project; onClick
   );
 }
 
-function ProgressCard({ entry, onDelete }: { entry: ProgressEntry; onDelete: () => void }) {
+function ProgressCard({ entry, onDelete, onReact }: { entry: ProgressEntry; onDelete?: () => void; onReact: (emoji: string) => void }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -189,19 +199,23 @@ function ProgressCard({ entry, onDelete }: { entry: ProgressEntry; onDelete: () 
     }
   };
 
+  const emojis = ['✨', '💎', '🚀', '💖', '👏'];
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="glass-card mb-8 group relative"
     >
-      <button
-        onClick={onDelete}
-        className="absolute top-4 right-4 p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl opacity-0 group-hover:opacity-100 transition-all z-10"
-        title="カケラを削除する"
-      >
-        <Trash2 size={16} />
-      </button>
+      {onDelete && (
+        <button
+          onClick={onDelete}
+          className="absolute top-4 right-4 p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl opacity-0 group-hover:opacity-100 transition-all z-10"
+          title="カケラを削除する"
+        >
+          <Trash2 size={16} />
+        </button>
+      )}
 
       <div className="flex flex-col md:flex-row">
         <div className="w-full md:w-1/3 aspect-video md:aspect-square bg-slate-50 relative overflow-hidden">
@@ -237,9 +251,30 @@ function ProgressCard({ entry, onDelete }: { entry: ProgressEntry; onDelete: () 
             </p>
           </div>
           <div className="mt-8 pt-6 border-t border-slate-100">
-            <div className="flex items-center gap-2 text-slate-400 text-xs font-bold tracking-widest uppercase">
-              <Sparkles size={14} className="text-indigo-400" />
-              <span>Captured Kakera</span>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                {emojis.map(emoji => (
+                  <button
+                    key={emoji}
+                    onClick={() => onReact(emoji)}
+                    className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-sm hover:bg-white hover:shadow-md transition-all active:scale-90"
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+
+              {entry.reactions && entry.reactions.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(
+                    entry.reactions.reduce((acc, r) => ({ ...acc, [r.content]: (acc[r.content] || 0) + 1 }), {} as Record<string, number>)
+                  ).map(([content, count]) => (
+                    <span key={content} className="bg-indigo-50 text-indigo-600 text-[10px] font-bold px-2 py-1 rounded-lg">
+                      {content} {count}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -271,24 +306,52 @@ export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    // 共有リンクのチェック
+    const params = new URLSearchParams(window.location.search);
+    const shareId = params.get('share');
+
+    if (shareId) {
+      handleLoadSharedProject(shareId);
+    }
+
     // 最初のセッション取得
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
-      if (session?.user) fetchProjects();
+      if (session?.user && !shareId) fetchProjects();
     });
 
     // 認証状態の変化を監視
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      if (session?.user) {
+      if (session?.user && !shareId) {
         fetchProjects();
-      } else {
+      } else if (!session?.user && !shareId) {
         setProjects([]);
       }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const handleLoadSharedProject = async (shareId: string) => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('share_id', shareId)
+      .single();
+
+    if (error || !data) {
+      console.error('Error loading shared project:', error);
+      alert('共有リンクが無効、または期限切れです。');
+      window.history.replaceState({}, '', window.location.pathname);
+    } else {
+      setSelectedProject(data);
+      fetchEntries(data.id);
+      setView('project');
+    }
+    setLoading(false);
+  };
 
   const fetchProjects = async () => {
     if (!user) return;
@@ -311,7 +374,7 @@ export default function App() {
     setLoading(true);
     const { data, error } = await supabase
       .from('progress_entries')
-      .select('*')
+      .select('*, reactions(*)')
       .eq('project_id', projectId)
       .order('timestamp', { ascending: false });
 
@@ -414,6 +477,35 @@ export default function App() {
       setUploading(false);
     }
   };
+  const handleCopyShareLink = (shareId: string | undefined) => {
+    if (!shareId) {
+      alert('このプロジェクトには共有設定がありません。');
+      return;
+    }
+    const url = `${window.location.origin}${window.location.pathname}?share=${shareId}`;
+    navigator.clipboard.writeText(url);
+    alert('共有リンクをコピーしました！知り合いに送ってみましょう。');
+  };
+
+  const handleAddReaction = async (entryId: string, content: string) => {
+    const { error } = await supabase
+      .from('reactions')
+      .insert([{
+        entry_id: entryId,
+        content: content,
+        type: 'emoji',
+        user_id: user?.id || null
+      }]);
+
+    if (error) {
+      console.error('Error adding reaction:', error);
+    } else if (selectedProject) {
+      fetchEntries(selectedProject.id);
+    }
+  };
+
+  const isSharedView = !!(new URLSearchParams(window.location.search).get('share'));
+
   const handleDeleteProject = async (projectId: string) => {
     if (!window.confirm('この箱を削除してもよろしいですか？記録されたすべてのカケラも失われます。')) return;
 
@@ -473,13 +565,15 @@ export default function App() {
           <button className="p-2 text-slate-400 hover:text-slate-900 transition-colors">
             <Search size={22} />
           </button>
-          <button
-            onClick={() => supabase.auth.signOut()}
-            className="p-2 text-slate-400 hover:text-rose-500 transition-colors text-xs font-bold uppercase tracking-wider"
-          >
-            Logout
-          </button>
-          {view === 'home' && (
+          {!isSharedView && (
+            <button
+              onClick={() => supabase.auth.signOut()}
+              className="p-2 text-slate-400 hover:text-rose-500 transition-colors text-xs font-bold uppercase tracking-wider"
+            >
+              Logout
+            </button>
+          )}
+          {view === 'home' && !isSharedView && (
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -678,16 +772,26 @@ export default function App() {
                 <div>
                   <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-4 tracking-tight uppercase leading-tight">{selectedProject.name}</h2>
                   <p className="text-slate-500 text-lg max-w-2xl">{selectedProject.description || 'この箱にはまだ説明がありません。'}</p>
+
+                  <div className="flex flex-wrap items-center gap-4 mt-6">
+                    <button
+                      onClick={() => handleCopyShareLink(selectedProject.share_id)}
+                      className="secondary-button py-2 px-4 text-sm"
+                    >
+                      <Send size={16} />
+                      <span>共有リンクをコピー</span>
+                    </button>
+                    {!isSharedView && (
+                      <button
+                        onClick={() => setShowUpload(true)}
+                        className="primary-button py-2 px-5 text-sm"
+                      >
+                        <Plus size={18} />
+                        <span>カケラを追加</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setShowUpload(true)}
-                  className="primary-button py-4 px-8"
-                >
-                  <Plus size={24} />
-                  <span>カケラを残す</span>
-                </motion.button>
               </div>
 
               {loading ? (
@@ -705,7 +809,12 @@ export default function App() {
               ) : (
                 <div className="space-y-4">
                   {entries.map((entry) => (
-                    <ProgressCard key={entry.id} entry={entry} onDelete={() => handleDeleteEntry(entry.id)} />
+                    <ProgressCard
+                      key={entry.id}
+                      entry={entry}
+                      onDelete={isSharedView ? undefined : () => handleDeleteEntry(entry.id)}
+                      onReact={(emoji) => handleAddReaction(entry.id, emoji)}
+                    />
                   ))}
                 </div>
               )}
