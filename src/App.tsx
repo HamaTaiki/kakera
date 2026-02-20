@@ -72,7 +72,7 @@ function AuthView({ onAuthSuccess }: { onAuthSuccess: () => void }) {
             <Diamond size={32} fill="currentColor" />
           </div>
           <h2 className="text-3xl font-black text-slate-900 tracking-tighter mb-2">Kakera</h2>
-          <p className="text-slate-500 font-medium">創作の旅を、ここから始めよう</p>
+          <p className="text-slate-500 font-medium">心の中のカケラを、形にする場所へ。</p>
         </div>
 
         <form onSubmit={handleAuth} className="space-y-6">
@@ -95,7 +95,7 @@ function AuthView({ onAuthSuccess }: { onAuthSuccess: () => void }) {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="input-field"
-                placeholder="あなたの名前"
+                placeholder="ペンネームなど（後で変更できます）"
                 required
               />
             </div>
@@ -477,18 +477,21 @@ export default function App() {
                     Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-rose-500">Kakera</span>
                   </h2>
                   <p className="text-xl md:text-2xl text-slate-500 font-medium leading-relaxed max-w-2xl mb-12">
-                    Kakeraは、日々の試行錯誤や未完成の断片（カケラ）を大切に残し、自分や誰かの新しいインスピレーションへと繋げるための場所です。
+                    <span className="inline-block text-slate-900 font-bold">完璧じゃなくていい。</span><br />
+                    <span className="inline-block">その一歩、その一瞬。</span><br />
+                    <span className="inline-block">Kakeraは、未完成の美しさを</span>
+                    <span className="inline-block">大切に積み上げていく場所です。</span>
                   </p>
                   <div className="flex flex-wrap gap-4 items-center">
                     <button
                       onClick={() => setShowCreateProject(true)}
                       className="primary-button py-5 px-10 text-lg group"
                     >
-                      カケラを記録しにいく
+                      創作を始める
                       <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                     </button>
                     <button className="secondary-button py-5 px-8 text-lg">
-                      誰かのカケラを見る
+                      みんなのカケラを見る
                       <Search size={20} />
                     </button>
                   </div>
@@ -510,30 +513,34 @@ export default function App() {
                       <span className="text-sm font-bold uppercase tracking-[0.2em]">Our Thought</span>
                     </div>
                     <h3 className="text-3xl md:text-5xl font-black text-slate-900 mb-10 leading-tight tracking-tight uppercase">
-                      完成したものだけが、<br />
-                      価値だと思っていませんか？
+                      宝石は、磨かれる前の<br />
+                      原石から生まれる。
                     </h3>
 
-                    <div className="space-y-8 text-slate-600 text-lg md:text-xl leading-relaxed font-medium italic">
+                    <div className="space-y-8 text-slate-600 text-lg md:text-xl leading-relaxed font-medium">
                       <p>
-                        SNSを開けば、誰かの「完璧な完成品」が溢れています。<br />
-                        それらを見て、まだ何者でもない自分の今のプロセスを「無価値なもの」だと隠してしまっていませんか。
+                        <span className="inline-block">SNSには「完璧な作品」が</span>
+                        <span className="inline-block">溢れています。</span><br />
+                        <span className="inline-block">それを見て、自分の未完成なプロセスを</span>
+                        <span className="inline-block">隠してしまっていませんか？</span>
                       </p>
                       <div className="pl-6 border-l-4 border-indigo-100 py-2">
                         <Quote className="text-indigo-200 mb-4" size={32} />
-                        <p className="text-slate-900 font-bold not-italic">
-                          創作の本当の美しさは、完成した結果ではなく、<br className="hidden md:block" />
-                          そこに至るまでの、泥臭くて、迷い多き、<br className="hidden md:block" />
-                          「カケラ」のような日々にあります。
+                        <p className="text-slate-900 font-bold">
+                          <span className="inline-block">創作の価値は、結果だけでなく</span><br />
+                          <span className="inline-block">そこに至るまでの「カケラ」のような</span>
+                          <span className="inline-block">日々に宿っています。</span>
                         </p>
                       </div>
                       <p>
-                        道端に落ちている石ころでも、磨けば宝石になる。
-                        Kakeraは、そんな日々の試行錯誤を「宝物の断片」として愛でるために生まれました。
+                        <span className="inline-block">道端の石板も、磨けば宝石になる。</span><br />
+                        <span className="inline-block">Kakeraは、日々の試行錯誤を</span>
+                        <span className="inline-block">「宝物の断片」として愛でるための</span>
+                        <span className="inline-block">場所です。</span>
                       </p>
                       <p>
-                        一人で抱える孤独な制作の時間を、他人のカケラと繋がることで温かく彩りたい。<br />
-                        あなたの些細な一歩が、いつか誰かの光になる。そんな未来を信じています。
+                        <span className="inline-block">あなたの何気ない一歩が、</span>
+                        <span className="inline-block">いつか誰かの光になるように。</span>
                       </p>
                     </div>
 
@@ -611,7 +618,7 @@ export default function App() {
               <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12 pb-12 border-b border-slate-100 px-2">
                 <div>
                   <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-4 tracking-tight uppercase leading-tight">{selectedProject.name}</h2>
-                  <p className="text-slate-500 text-lg italic max-w-2xl">{selectedProject.description || 'この箱にはまだ説明がありません。'}</p>
+                  <p className="text-slate-500 text-lg max-w-2xl">{selectedProject.description || 'この箱にはまだ説明がありません。'}</p>
                 </div>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
