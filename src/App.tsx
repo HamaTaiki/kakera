@@ -502,7 +502,7 @@ export default function App() {
       const { data: uploadData, error: dbError } = await supabase
         .from('progress_entries')
         .insert([newEntry])
-        .select('*, reactions(*)');
+        .select();
 
       if (dbError) throw dbError;
 
