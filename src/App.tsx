@@ -376,10 +376,17 @@ export default function App() {
   const handleCreateProject = async () => {
     if (!newProjectName) return;
     setUploading(true);
+    const newProject = {
+      name: newProjectName,
+      description: newProjectDesc,
+      user_id: user?.id,
+      share_id: crypto.randomUUID() // 共有リンクを最初から作成
+    };
+
     const { data, error } = await supabase
       .from('projects')
-      .insert([{ name: newProjectName, description: newProjectDesc, user_id: user?.id }])
-      .select();
+      .insert([newProject])
+      .select('id, name, description, created_at, user_id, share_id, share_passphrase');
 
     if (error) {
       alert(`エラー: ${error.message}`);
@@ -486,13 +493,32 @@ export default function App() {
       setUploading(false);
     }
   };
-  const handleCopyShareLink = (shareId: string | undefined) => {
-    if (!shareId) {
-      alert('このプロジェクトには共有設定がありません。');
-      return;
+  const handleCopyShareLink = async (currentShareId: string | undefined) => {
+    let shareId = currentShareId;
+
+    if (!shareId && selectedProject) {
+      // 共有IDがない場合はその場で生成して保存する（救済処置）
+      const newShareId = crypto.randomUUID();
+      const { error } = await supabase
+        .from('projects')
+        .update({ share_id: newShareId })
+        .eq('id', selectedProject.id);
+
+      if (error) {
+        alert('共有リンクの作成に失敗しました。');
+        return;
+      }
+
+      shareId = newShareId;
+      // ステートを更新
+      setSelectedProject(prev => prev ? { ...prev, share_id: newShareId } : null);
+      setProjects(prev => prev.map(p => p.id === selectedProject.id ? { ...p, share_id: newShareId } : p));
     }
+
+    if (!shareId) return;
+
     const url = `${window.location.origin}${window.location.pathname}?share=${shareId}`;
-    navigator.clipboard.writeText(url);
+    await navigator.clipboard.writeText(url);
     alert('共有リンクをコピーしました！知り合いに送ってみましょう。');
   };
 
