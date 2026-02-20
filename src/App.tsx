@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Plus, Image as ImageIcon, Music, Send, X, Play, Pause, Clock, Loader2, AlertCircle, LayoutGrid, FolderPlus, ChevronLeft, ArrowRight, Layers, Sparkles, Rocket, Zap, Gem, Diamond, Search, Heart, Quote, Compass } from 'lucide-react';
+import { Plus, Image as ImageIcon, Music, Send, X, Play, Pause, Clock, Loader2, AlertCircle, LayoutGrid, FolderPlus, ChevronLeft, ArrowRight, Layers, Sparkles, Rocket, Zap, Gem, Diamond, Search, Heart, Quote, Compass, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
 import { User } from '@supabase/supabase-js';
@@ -137,14 +137,22 @@ function AuthView({ onAuthSuccess }: { onAuthSuccess: () => void }) {
   );
 }
 
-function ProjectCard({ project, onClick }: { project: Project; onClick: () => void }) {
+function ProjectCard({ project, onClick, onDelete }: { project: Project; onClick: () => void; onDelete: (e: React.MouseEvent) => void }) {
   return (
     <motion.div
       whileHover={{ y: -5, scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className="glass-card p-8 cursor-pointer group"
+      className="glass-card p-8 cursor-pointer group relative"
     >
+      <button
+        onClick={onDelete}
+        className="absolute top-6 right-6 p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl opacity-0 group-hover:opacity-100 transition-all z-10"
+        title="箱を削除する"
+      >
+        <Trash2 size={18} />
+      </button>
+
       <div className="flex justify-between items-start mb-6">
         <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-300">
           <Gem size={28} />
@@ -165,7 +173,7 @@ function ProjectCard({ project, onClick }: { project: Project; onClick: () => vo
   );
 }
 
-function ProgressCard({ entry }: { entry: ProgressEntry }) {
+function ProgressCard({ entry, onDelete }: { entry: ProgressEntry; onDelete: () => void }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -185,8 +193,16 @@ function ProgressCard({ entry }: { entry: ProgressEntry }) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass-card mb-8"
+      className="glass-card mb-8 group relative"
     >
+      <button
+        onClick={onDelete}
+        className="absolute top-4 right-4 p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl opacity-0 group-hover:opacity-100 transition-all z-10"
+        title="カケラを削除する"
+      >
+        <Trash2 size={16} />
+      </button>
+
       <div className="flex flex-col md:flex-row">
         <div className="w-full md:w-1/3 aspect-video md:aspect-square bg-slate-50 relative overflow-hidden">
           {entry.type === 'image' ? (
@@ -398,6 +414,35 @@ export default function App() {
       setUploading(false);
     }
   };
+  const handleDeleteProject = async (projectId: string) => {
+    if (!window.confirm('この箱を削除してもよろしいですか？記録されたすべてのカケラも失われます。')) return;
+
+    const { error } = await supabase
+      .from('projects')
+      .delete()
+      .eq('id', projectId);
+
+    if (error) {
+      alert(`削除失敗: ${error.message}`);
+    } else {
+      await fetchProjects();
+    }
+  };
+
+  const handleDeleteEntry = async (entryId: string) => {
+    if (!window.confirm('このカケラを削除してもよろしいですか？')) return;
+
+    const { error } = await supabase
+      .from('progress_entries')
+      .delete()
+      .eq('id', entryId);
+
+    if (error) {
+      alert(`削除失敗: ${error.message}`);
+    } else if (selectedProject) {
+      await fetchEntries(selectedProject.id);
+    }
+  };
 
   if (!user) {
     return <AuthView onAuthSuccess={fetchProjects} />;
@@ -589,6 +634,10 @@ export default function App() {
                       key={project.id}
                       project={project}
                       onClick={() => handleSelectProject(project)}
+                      onDelete={(e) => {
+                        e.stopPropagation();
+                        handleDeleteProject(project.id);
+                      }}
                     />
                   ))}
                 </div>
@@ -644,7 +693,7 @@ export default function App() {
               ) : (
                 <div className="space-y-4">
                   {entries.map((entry) => (
-                    <ProgressCard key={entry.id} entry={entry} />
+                    <ProgressCard key={entry.id} entry={entry} onDelete={() => handleDeleteEntry(entry.id)} />
                   ))}
                 </div>
               )}
