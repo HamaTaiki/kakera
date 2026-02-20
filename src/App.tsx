@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Plus, Image as ImageIcon, Music, Send, X, Play, Pause, Clock, Loader2, AlertCircle, LayoutGrid, FolderPlus, ChevronLeft, ArrowRight, Layers, Sparkles, Rocket, Zap, Gem, Diamond, Search, Heart, Quote, Compass } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
+import { User } from '@supabase/supabase-js';
 
 interface Project {
   id: string;
@@ -20,6 +21,98 @@ interface ProgressEntry {
 }
 
 // --- Components ---
+
+function AuthView({ onAuthSuccess }: { onAuthSuccess: () => void }) {
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      if (isLogin) {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        alert('確認用メールを送信しました。メールを確認してログインしてください。');
+      }
+      onAuthSuccess();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-6">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="glass-card w-full max-w-md p-10"
+      >
+        <div className="flex flex-col items-center mb-10">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-600 to-rose-500 flex items-center justify-center text-white shadow-xl mb-6">
+            <Diamond size={32} fill="currentColor" />
+          </div>
+          <h2 className="text-3xl font-black text-slate-900 tracking-tighter mb-2">Kakera</h2>
+          <p className="text-slate-500 font-medium">創作の旅を、ここから始めよう</p>
+        </div>
+
+        <form onSubmit={handleAuth} className="space-y-6">
+          <div>
+            <label className="block text-sm font-bold text-slate-700 mb-2">メールアドレス</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="input-field"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-slate-700 mb-2">パスワード</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="input-field"
+              required
+            />
+          </div>
+
+          {error && (
+            <div className="flex items-center gap-2 text-rose-500 text-sm font-bold bg-rose-50 p-4 rounded-2xl">
+              <AlertCircle size={18} />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <button type="submit" disabled={loading} className="primary-button w-full py-4 text-lg">
+            {loading ? <Loader2 className="animate-spin" /> : <Sparkles size={20} />}
+            <span>{isLogin ? 'ログイン' : 'アカウント作成'}</span>
+          </button>
+        </form>
+
+        <div className="mt-8 pt-8 border-t border-slate-100 text-center">
+          <button
+            onClick={() => setIsLogin(!isLogin)}
+            className="text-indigo-600 font-bold hover:underline"
+          >
+            {isLogin ? 'まだアカウントをお持ちでない方' : 'すでにアカウントをお持ちの方'}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
 
 function ProjectCard({ project, onClick }: { project: Project; onClick: () => void }) {
   return (
@@ -119,6 +212,7 @@ function ProgressCard({ entry }: { entry: ProgressEntry }) {
 // --- Main Application ---
 
 export default function App() {
+  const [user, setUser] = useState<User | null>(null);
   const [view, setView] = useState<'home' | 'project'>('home');
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -138,14 +232,32 @@ export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetchProjects();
+    // 最初のセッション取得
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) fetchProjects();
+    });
+
+    // 認証状態の変化を監視
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchProjects();
+      } else {
+        setProjects([]);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const fetchProjects = async () => {
+    if (!user) return;
     setLoading(true);
     const { data, error } = await supabase
       .from('projects')
       .select('*')
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -177,7 +289,7 @@ export default function App() {
     setUploading(true);
     const { data, error } = await supabase
       .from('projects')
-      .insert([{ name: newProjectName, description: newProjectDesc }])
+      .insert([{ name: newProjectName, description: newProjectDesc, user_id: user?.id }])
       .select();
 
     if (error) {
@@ -240,7 +352,8 @@ export default function App() {
         url: publicUrl,
         notes: notes,
         timestamp: Date.now(),
-        project_id: selectedProject.id
+        project_id: selectedProject.id,
+        user_id: user?.id
       };
 
       const { error: dbError } = await supabase
@@ -263,6 +376,10 @@ export default function App() {
     }
   };
 
+  if (!user) {
+    return <AuthView onAuthSuccess={fetchProjects} />;
+  }
+
   return (
     <div className="min-h-screen py-12 px-6 md:px-12 max-w-6xl mx-auto">
 
@@ -284,6 +401,12 @@ export default function App() {
         <div className="flex items-center gap-4">
           <button className="p-2 text-slate-400 hover:text-slate-900 transition-colors">
             <Search size={22} />
+          </button>
+          <button
+            onClick={() => supabase.auth.signOut()}
+            className="p-2 text-slate-400 hover:text-rose-500 transition-colors text-xs font-bold uppercase tracking-wider"
+          >
+            Logout
           </button>
           {view === 'home' && (
             <motion.button
