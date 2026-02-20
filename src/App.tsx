@@ -318,7 +318,7 @@ export default function App() {
   const handleLoadSharedProject = async (shareId: string, currentUser: User | null) => {
     const { data, error } = await supabase
       .from('projects')
-      .select('*')
+      .select('id, name, description, created_at, user_id, share_id, share_passphrase')
       .eq('share_id', shareId)
       .single();
 
@@ -347,7 +347,7 @@ export default function App() {
     setLoading(true);
     const { data, error } = await supabase
       .from('projects')
-      .select('*')
+      .select('id, name, description, created_at, user_id, share_id, share_passphrase')
       .eq('user_id', currentUser.id)
       .order('created_at', { ascending: false });
 
@@ -362,7 +362,7 @@ export default function App() {
   const fetchEntries = async (projectId: string) => {
     const { data, error } = await supabase
       .from('progress_entries')
-      .select('*')
+      .select('id, type, url, notes, timestamp, project_id, user_id')
       .eq('project_id', projectId)
       .order('timestamp', { ascending: false });
 
@@ -464,7 +464,7 @@ export default function App() {
       const { data: uploadData, error: dbError } = await supabase
         .from('progress_entries')
         .insert([newEntry])
-        .select();
+        .select('id, type, url, notes, timestamp, project_id, user_id');
 
       if (dbError) throw dbError;
 
