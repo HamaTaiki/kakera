@@ -706,12 +706,17 @@ export default function App() {
 
       if (dbError) throw dbError;
 
-      if (!uploadData || uploadData.length === 0) {
-        throw new Error('データの保存には成功しましたが、戻り値の取得に失敗しました。');
+      // SupabaseのRLS設定等により、稀にupdate/insert直後のselectが空を返すことがあるため
+      // その場合は手元のデータでフォールバックしてUIを更新する
+      const savedEntry = (uploadData && uploadData[0])
+        ? uploadData[0]
+        : (editingEntry ? { ...newEntry, id: editingEntry.id } as ProgressEntry : null);
+
+      if (!savedEntry) {
+        throw new Error('データの保存に失敗しました。通信状況を確認してください。');
       }
 
-      const savedEntry = uploadData[0];
-      console.log('Successfully saved to DB:', savedEntry);
+      console.log('Processed saved entry:', savedEntry);
 
       if (editingEntry) {
         // 既存エントリの更新：DBから返ってきた最新の値をそのまま使う
