@@ -1134,341 +1134,353 @@ export default function App() {
                       </button>
                     )}
                   </div>
-
-                  {/* Category Filters */}
-                  <div className="flex flex-wrap items-center gap-3 mb-8 pb-4 border-b border-slate-100/50">
-                    <div className="flex items-center gap-2 text-slate-400 text-[10px] font-bold mr-2 uppercase tracking-widest">
-                      <LayoutGrid size={12} />
-                      <span>Filter</span>
-                    </div>
-                    <button
-                      onClick={() => setFilterCategory('all')}
-                      className={`px-4 py-1.5 rounded-full text-[11px] font-bold transition-all border ${filterCategory === 'all'
-                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-100'
-                        : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
-                        }`}
-                    >
-                      すべて
-                    </button>
-                    {CATEGORIES.map((cat) => (
-                      <button
-                        key={cat.id}
-                        onClick={() => setFilterCategory(filterCategory === cat.label ? 'all' : cat.label)}
-                        className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-bold transition-all border ${filterCategory === cat.label
-                          ? `${cat.bg} ${cat.color} border-current shadow-sm`
-                          : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
-                          }`}
-                      >
-                        <cat.icon size={12} />
-                        <span>{cat.label}</span>
-                      </button>
-                    ))}
-                  </div>
-
-                  <>
-                    {loading ? (
-                      <div className="flex justify-center py-20">
-                        <Loader2 className="animate-spin text-indigo-200" size={48} />
-                      </div>
-                    ) : entries.length === 0 ? (
-                      <div className="glass-card py-24 text-center border-dashed bg-transparent border-slate-200 shadow-none">
-                        <Gem className="mx-auto mb-6 text-slate-200" size={64} />
-                        <p className="text-slate-400 text-lg mb-8">まだカケラがありません。輝く断片を残しましょう。</p>
-                        <button onClick={() => setShowUpload(true)} className="secondary-button mx-auto">
-                          カケラを記録する
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {entries
-                          .filter(entry => filterCategory === 'all' || entry.category === filterCategory)
-                          .map((entry) => (
-                            <ProgressCard
-                              key={entry.id}
-                              entry={entry}
-                              onEdit={isSharedView ? undefined : () => handleEdit(entry)}
-                              onDelete={isSharedView ? undefined : () => handleDeleteEntry(entry.id)}
-                            />
-                          ))}
-                        {entries.filter(entry => filterCategory !== 'all' && entry.category === filterCategory).length === 0 && filterCategory !== 'all' && (
-                          <div className="text-center py-20 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-100">
-                            <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-md mx-auto mb-4">
-                              <Search className="text-slate-300" size={32} />
-                            </div>
-                            <p className="text-slate-400 font-bold">このカテゴリのカケラはまだありません。</p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </>
-                </motion.div>
-            )}
-              </AnimatePresence>
-            </main>
-
-        {/* --- Modals --- */}
-          <AnimatePresence>
-            {/* Create Project Modal */}
-            {showCreateProject && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-md">
-                <motion.div
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.9, opacity: 0 }}
-                  className="glass-card w-full max-w-lg p-10 bg-white"
-                >
-                  <div className="flex justify-between items-center mb-10">
-                    <h3 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
-                      <FolderPlus className="text-indigo-600" />
-                      新しい創作箱を作る
-                    </h3>
-                    <button onClick={() => setShowCreateProject(false)} className="text-slate-400 hover:text-slate-900 transition-colors">
-                      <X size={28} />
-                    </button>
-                  </div>
-
-                  <div className="space-y-8">
-                    <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-3">箱のなまえ</label>
-                      <input
-                        type="text"
-                        value={newProjectName}
-                        onChange={(e) => setNewProjectName(e.target.value)}
-                        placeholder="例: 未完成の組曲"
-                        className="input-field"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-3">どんなカケラを集める？</label>
-                      <textarea
-                        value={newProjectDesc}
-                        onChange={(e) => setNewProjectDesc(e.target.value)}
-                        placeholder="この創作の目的やイメージを書いておこう..."
-                        className="input-field min-h-[120px] resize-none"
-                      />
-                    </div>
-                    <button
-                      onClick={handleCreateProject}
-                      disabled={!newProjectName || uploading}
-                      className="primary-button w-full py-5 text-lg"
-                    >
-                      {uploading ? <Loader2 className="animate-spin" /> : <Gem size={20} />}
-                      <span>創作を開始する</span>
-                    </button>
-                  </div>
-                </motion.div>
+                </div>
               </div>
-            )}
 
-            {/* Upload Progress Modal */}
-            {showUpload && selectedProject && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-md">
-                <motion.div
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.9, opacity: 0 }}
-                  className="glass-card w-full max-w-xl p-10 bg-white"
+              {/* Category Filters */}
+              <div className="flex flex-wrap items-center gap-3 mb-8 pb-4 border-b border-slate-100/50">
+                <div className="flex items-center gap-2 text-slate-400 text-[10px] font-bold mr-2 uppercase tracking-widest">
+                  <LayoutGrid size={12} />
+                  <span>Filter</span>
+                </div>
+                <button
+                  onClick={() => setFilterCategory('all')}
+                  className={`px-4 py-1.5 rounded-full text-[11px] font-bold transition-all border ${filterCategory === 'all'
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-100'
+                    : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
+                    }`}
                 >
-                  <div className="flex justify-between items-center mb-10">
-                    <div>
-                      <p className="text-indigo-600 font-bold text-[10px] uppercase tracking-widest mb-1 font-display tracking-wider mb-2">{selectedProject.name}</p>
-                      <h3 className="text-2xl font-bold text-slate-900">
-                        {editingEntry ? 'カケラを磨く' : 'カケラを残す'}
-                      </h3>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setShowUpload(false);
-                        setEditingEntry(null);
-                        setNotes('');
-                        setFile(null);
-                        setPreviewUrl(null);
-                        setUploadType(null);
-                      }}
-                      className="text-slate-400 hover:text-slate-900 transition-colors"
-                    >
-                      <X size={28} />
+                  すべて
+                </button>
+                {CATEGORIES.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setFilterCategory(filterCategory === cat.label ? 'all' : cat.label)}
+                    className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-bold transition-all border ${filterCategory === cat.label
+                      ? `${cat.bg} ${cat.color} border-current shadow-sm`
+                      : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
+                      }`}
+                  >
+                    <cat.icon size={12} />
+                    <span>{cat.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              <>
+                {loading ? (
+                  <div className="flex justify-center py-20">
+                    <Loader2 className="animate-spin text-indigo-200" size={48} />
+                  </div>
+                ) : entries.length === 0 ? (
+                  <div className="glass-card py-24 text-center border-dashed bg-transparent border-slate-200 shadow-none">
+                    <Gem className="mx-auto mb-6 text-slate-200" size={64} />
+                    <p className="text-slate-400 text-lg mb-8">まだカケラがありません。輝く断片を残しましょう。</p>
+                    <button onClick={() => setShowUpload(true)} className="secondary-button mx-auto">
+                      カケラを記録する
                     </button>
                   </div>
-
-                  <div className="space-y-6">
-                    <div className="flex p-1 bg-slate-100 rounded-2xl">
-                      <button
-                        onClick={() => {
-                          setUploadType(null);
-                          setPreviewUrl(null);
-                          setFile(null);
-                        }}
-                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all ${uploadType !== 'text' ? 'bg-white shadow-md text-indigo-600' : 'text-slate-400 hover:text-slate-600'
-                          }`}
-                      >
-                        <ImageIcon size={18} />
-                        <span>メディア</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setUploadType('text');
-                          setPreviewUrl(null);
-                          setFile(null);
-                        }}
-                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all ${uploadType === 'text' ? 'bg-white shadow-md text-indigo-600' : 'text-slate-400 hover:text-slate-600'
-                          }`}
-                      >
-                        <Quote size={18} />
-                        <span>テキスト</span>
-                      </button>
-                    </div>
-
-                    {uploadType !== 'text' ? (
-                      !previewUrl ? (
-                        <div
-                          onClick={() => fileInputRef.current?.click()}
-                          className="aspect-video rounded-3xl border-2 border-dashed border-slate-200 hover:border-indigo-400 transition-all cursor-pointer flex flex-col items-center justify-center gap-4 bg-slate-50 group"
-                        >
-                          <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                            <Sparkles className="text-indigo-500" size={32} />
-                          </div>
-                          <p className="text-slate-400 text-sm font-bold">画像または音声のカケラを選択</p>
-                          <input
-                            type="file"
-                            ref={fileInputRef}
-                            onChange={handleFileChange}
-                            accept="image/*,audio/*"
-                            className="hidden"
-                          />
-                        </div>
-                      ) : (
-                        <div
-                          onClick={() => fileInputRef.current?.click()}
-                          className="relative rounded-3xl overflow-hidden aspect-video bg-slate-50 border border-slate-100 group cursor-pointer"
-                        >
-                          {uploadType === 'image' ? (
-                            <img src={previewUrl} className="w-full h-full object-cover transition-transform group-hover:scale-105" alt="Preview" />
-                          ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-indigo-50 to-rose-50">
-                              <Music size={48} className="text-indigo-300" />
-                              <p className="text-slate-600 font-bold">音のカケラを読み込みました</p>
-                            </div>
-                          )}
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <div className="flex flex-col items-center gap-2 text-white">
-                              <Plus size={32} />
-                              <span className="text-xs font-bold uppercase tracking-widest">カケラを差し替える</span>
-                            </div>
-                          </div>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setPreviewUrl(null); setFile(null); }}
-                            className="absolute top-4 right-4 p-2 bg-white/90 shadow-lg rounded-full text-slate-600 hover:text-rose-500 transition-colors z-20"
-                          >
-                            <X size={18} />
-                          </button>
-                        </div>
-                      )
-                    ) : (
-                      <div className="aspect-[2/1] bg-gradient-to-br from-indigo-50 to-rose-50 rounded-3xl flex items-center justify-center border border-slate-100">
-                        <Quote className="text-indigo-200" size={64} />
-                      </div>
-                    )}
-
-                    <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-3">今の思いをメモに残す</label>
-                      <textarea
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        placeholder="カケラについての説明や、今の気づきを自由に..."
-                        className="input-field min-h-[120px] resize-none"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-3">カテゴリ（タグ）</label>
-                        <div className="flex flex-wrap gap-2">
-                          {CATEGORIES.map((cat) => {
-                            const Icon = cat.icon;
-                            const isSelected = selectedCategory === cat.label;
-                            return (
-                              <button
-                                key={cat.id}
-                                onClick={() => setSelectedCategory(isSelected ? '' : cat.label)}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold transition-all border ${isSelected
-                                  ? `${cat.bg} ${cat.color} border-current ring-2 ring-offset-2 ring-indigo-500`
-                                  : 'bg-white text-slate-400 border-slate-200 hover:border-slate-300'
-                                  }`}
-                              >
-                                <Icon size={12} />
-                                <span>{cat.label}</span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-3">テーマカラー</label>
-                        <div className="flex flex-wrap gap-2.5">
-                          {COLORS.map((col) => (
-                            <button
-                              key={col.id}
-                              onClick={() => setSelectedColor(col.value)}
-                              className={`w-7 h-7 rounded-full transition-all ${col.class} ${selectedColor === col.value
-                                ? 'ring-4 ring-offset-2 ring-indigo-500 scale-110 shadow-lg'
-                                : 'hover:scale-110'
-                                }`}
-                              title={col.label}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 p-4 rounded-2xl bg-indigo-50/50 border border-indigo-100/50">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Globe size={16} className="text-indigo-600" />
-                          <span className="text-sm font-bold text-slate-700">みんなのカケラに共有する</span>
-                        </div>
-                        <p className="text-[10px] text-slate-500 leading-tight">チェックを入れると、全てのユーザーにこのカケラが公開されます。</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="sr-only peer"
-                          checked={isPublic}
-                          onChange={(e) => setIsPublic(e.target.checked)}
+                ) : (
+                  <div className="space-y-4">
+                    {entries
+                      .filter(entry => filterCategory === 'all' || entry.category === filterCategory)
+                      .map((entry) => (
+                        <ProgressCard
+                          key={entry.id}
+                          entry={entry}
+                          onEdit={isSharedView ? undefined : () => handleEdit(entry)}
+                          onDelete={isSharedView ? undefined : () => handleDeleteEntry(entry.id)}
                         />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                      </label>
-                    </div>
+                      ))}
+                    {entries.filter(entry => filterCategory !== 'all' && entry.category === filterCategory).length === 0 && filterCategory !== 'all' && (
+                      <div className="text-center py-20 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-100">
+                        <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-md mx-auto mb-4">
+                          <Search className="text-slate-300" size={32} />
+                        </div>
+                        <p className="text-slate-400 font-bold">このカテゴリのカケラはまだありません。</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </main>
 
-                    <div className="flex gap-4">
+      {/* --- Modals --- */}
+      <AnimatePresence>
+        {/* Create Project Modal */}
+        {showCreateProject && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-md">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="glass-card w-full max-w-lg p-10 bg-white"
+            >
+              <div className="flex justify-between items-center mb-10">
+                <h3 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+                  <FolderPlus className="text-indigo-600" />
+                  新しい創作箱を作る
+                </h3>
+                <button onClick={() => setShowCreateProject(false)} className="text-slate-400 hover:text-slate-900 transition-colors">
+                  <X size={28} />
+                </button>
+              </div>
+
+              <div className="space-y-8">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-3">箱のなまえ</label>
+                  <input
+                    type="text"
+                    value={newProjectName}
+                    onChange={(e) => setNewProjectName(e.target.value)}
+                    placeholder="例: 未完成の組曲"
+                    className="input-field"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-3">どんなカケラを集める？</label>
+                  <textarea
+                    value={newProjectDesc}
+                    onChange={(e) => setNewProjectDesc(e.target.value)}
+                    placeholder="この創作の目的やイメージを書いておこう..."
+                    className="input-field min-h-[120px] resize-none"
+                  />
+                </div>
+                <button
+                  onClick={handleCreateProject}
+                  disabled={!newProjectName || uploading}
+                  className="primary-button w-full py-5 text-lg"
+                >
+                  {uploading ? <Loader2 className="animate-spin" /> : <Gem size={20} />}
+                  <span>創作を開始する</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Upload Progress Modal */}
+        {showUpload && (selectedProject || editingEntry) && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-md">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="glass-card w-full max-w-xl p-10 bg-white"
+            >
+              <div className="flex justify-between items-center mb-10">
+                <div>
+                  <p className="text-indigo-600 font-bold text-[10px] uppercase tracking-widest mb-1 font-display tracking-wider mb-2">
+                    {editingEntry ? 'カケラの持ち主：あなた' : (selectedProject?.name || '')}
+                  </p>
+                  <h3 className="text-2xl font-bold text-slate-900">
+                    {editingEntry ? 'カケラを磨く' : 'カケラを残す'}
+                  </h3>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowUpload(false);
+                    setEditingEntry(null);
+                    setNotes('');
+                    setFile(null);
+                    setPreviewUrl(null);
+                    setUploadType(null);
+                    setSelectedCategory('');
+                    setSelectedColor('');
+                  }}
+                  className="text-slate-400 hover:text-slate-900 transition-colors"
+                >
+                  <X size={28} />
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                <div className="flex p-1 bg-slate-100 rounded-2xl">
+                  <button
+                    onClick={() => {
+                      if (!editingEntry) {
+                        setUploadType(null);
+                        setPreviewUrl(null);
+                        setFile(null);
+                      }
+                    }}
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all ${uploadType !== 'text' ? 'bg-white shadow-md text-indigo-600' : 'text-slate-400 hover:text-slate-600'
+                      }`}
+                  >
+                    <ImageIcon size={18} />
+                    <span>メディア</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!editingEntry) {
+                        setUploadType('text');
+                        setPreviewUrl(null);
+                        setFile(null);
+                      }
+                    }}
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all ${uploadType === 'text' ? 'bg-white shadow-md text-indigo-600' : 'text-slate-400 hover:text-slate-600'
+                      }`}
+                  >
+                    <Quote size={18} />
+                    <span>テキスト</span>
+                  </button>
+                </div>
+
+                {uploadType !== 'text' ? (
+                  !previewUrl ? (
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="aspect-video rounded-3xl border-2 border-dashed border-slate-200 hover:border-indigo-400 transition-all cursor-pointer flex flex-col items-center justify-center gap-4 bg-slate-50 group"
+                    >
+                      <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                        <Sparkles className="text-indigo-500" size={32} />
+                      </div>
+                      <p className="text-slate-400 text-sm font-bold">画像または音声のカケラを選択</p>
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        accept="image/*,audio/*"
+                        className="hidden"
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="relative rounded-3xl overflow-hidden aspect-video bg-slate-50 border border-slate-100 group cursor-pointer"
+                    >
+                      {uploadType === 'image' ? (
+                        <img src={previewUrl} className="w-full h-full object-cover transition-transform group-hover:scale-105" alt="Preview" />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-indigo-50 to-rose-50">
+                          <Music size={48} className="text-indigo-300" />
+                          <p className="text-slate-600 font-bold">音のカケラを読み込みました</p>
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <div className="flex flex-col items-center gap-2 text-white">
+                          <Plus size={32} />
+                          <span className="text-xs font-bold uppercase tracking-widest">カケラを差し替える</span>
+                        </div>
+                      </div>
                       <button
-                        onClick={() => {
-                          setShowUpload(false);
-                          setEditingEntry(null);
-                          setNotes('');
-                          setFile(null);
-                          setPreviewUrl(null);
-                          setUploadType(null);
-                        }}
-                        className="secondary-button flex-1 py-5"
+                        onClick={(e) => { e.stopPropagation(); setPreviewUrl(null); setFile(null); }}
+                        className="absolute top-4 right-4 p-2 bg-white/90 shadow-lg rounded-full text-slate-600 hover:text-rose-500 transition-colors z-20"
                       >
-                        やめる
+                        <X size={18} />
                       </button>
-                      <button
-                        onClick={handleUpload}
-                        disabled={(uploadType !== 'text' && !file && !editingEntry) || (uploadType === 'text' && !notes.trim()) || uploading}
-                        className="primary-button flex-[2] py-5"
-                      >
-                        {uploading ? <Loader2 className="animate-spin" /> : <Diamond size={20} />}
-                        <span>{uploading ? '磨き中...' : '大切に保存する'}</span>
-                      </button>
+                    </div>
+                  )
+                ) : (
+                  <div className="aspect-[2/1] bg-gradient-to-br from-indigo-50 to-rose-50 rounded-3xl flex items-center justify-center border border-slate-100">
+                    <Quote className="text-indigo-200" size={64} />
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-3">今の思いをメモに残す</label>
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="カケラについての説明や、今の気づきを自由に..."
+                    className="input-field min-h-[120px] resize-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-3">カテゴリ（タグ）</label>
+                    <div className="flex flex-wrap gap-2">
+                      {CATEGORIES.map((cat) => {
+                        const Icon = cat.icon;
+                        const isSelected = selectedCategory === cat.label;
+                        return (
+                          <button
+                            key={cat.id}
+                            onClick={() => setSelectedCategory(isSelected ? '' : cat.label)}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold transition-all border ${isSelected
+                              ? `${cat.bg} ${cat.color} border-current ring-2 ring-offset-2 ring-indigo-500`
+                              : 'bg-white text-slate-400 border-slate-200 hover:border-slate-300'
+                              }`}
+                          >
+                            <Icon size={12} />
+                            <span>{cat.label}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
-                </motion.div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-3">テーマカラー</label>
+                    <div className="flex flex-wrap gap-2.5">
+                      {COLORS.map((col) => (
+                        <button
+                          key={col.id}
+                          onClick={() => setSelectedColor(col.value)}
+                          className={`w-7 h-7 rounded-full transition-all border ${col.class} ${selectedColor === col.value
+                            ? 'ring-4 ring-offset-2 ring-indigo-500 scale-110 shadow-lg border-white'
+                            : 'hover:scale-110 border-transparent'
+                            }`}
+                          title={col.label}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-4 rounded-2xl bg-indigo-50/50 border border-indigo-100/50">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Globe size={16} className="text-indigo-600" />
+                      <span className="text-sm font-bold text-slate-700">みんなのカケラに共有する</span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 leading-tight">チェックを入れると、全てのユーザーにこのカケラが公開されます。</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={isPublic}
+                      onChange={(e) => setIsPublic(e.target.checked)}
+                    />
+                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                  </label>
+                </div>
+
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => {
+                      setShowUpload(false);
+                      setEditingEntry(null);
+                      setNotes('');
+                      setFile(null);
+                      setPreviewUrl(null);
+                      setUploadType(null);
+                      setSelectedCategory('');
+                      setSelectedColor('');
+                    }}
+                    className="secondary-button flex-1 py-5"
+                  >
+                    やめる
+                  </button>
+                  <button
+                    onClick={handleUpload}
+                    disabled={(uploadType !== 'text' && !file && !editingEntry) || (uploadType === 'text' && !notes.trim()) || uploading}
+                    className="primary-button flex-[2] py-5"
+                  >
+                    {uploading ? <Loader2 className="animate-spin" /> : <Diamond size={20} />}
+                    <span>{uploading ? '磨き中...' : '大切に保存する'}</span>
+                  </button>
+                </div>
               </div>
-            )}
-          </AnimatePresence>
-        </div>
-        );
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
 }
