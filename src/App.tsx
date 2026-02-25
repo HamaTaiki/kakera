@@ -698,32 +698,34 @@ export default function App() {
           .from('progress_entries')
           .update(newEntry)
           .eq('id', editingEntry.id)
-          .select()
+          .select('id, type, url, notes, timestamp, project_id, user_id, is_public, category, color')
         : await supabase
           .from('progress_entries')
           .insert([newEntry])
-          .select();
+          .select('id, type, url, notes, timestamp, project_id, user_id, is_public, category, color');
 
       if (dbError) throw dbError;
 
       const savedEntry = uploadData && uploadData[0] ? uploadData[0] : { ...newEntry, id: editingEntry?.id };
-      console.log('Entry saved successfully', savedEntry);
+      console.log('Entry saved successfully:', savedEntry);
 
       if (editingEntry) {
-        setEntries(prev => prev.map(e => e.id === editingEntry.id ? { ...e, ...savedEntry } : e));
-        setPublicEntries(prev => prev.map(e => e.id === editingEntry.id ? { ...e, ...savedEntry } : e));
+        // 既存エントリの更新：確実に最新のsavedEntry（DBから返ってきたもの）をマージする
+        const updatedEntry = { ...editingEntry, ...savedEntry };
+        setEntries(prev => prev.map(e => e.id === editingEntry.id ? updatedEntry : e));
+        setPublicEntries(prev => prev.map(e => e.id === editingEntry.id ? updatedEntry : e));
 
         // 公開設定の同期
         if (isPublic) {
           setPublicEntries(prev => {
-            const exists = prev.find(e => e.id === savedEntry.id);
+            const exists = prev.find(e => e.id === updatedEntry.id);
             if (exists) {
-              return prev.map(e => e.id === savedEntry.id ? { ...e, ...savedEntry } : e);
+              return prev.map(e => e.id === updatedEntry.id ? updatedEntry : e);
             }
-            return [savedEntry, ...prev].sort((a, b) => b.timestamp - a.timestamp);
+            return [updatedEntry, ...prev].sort((a, b) => b.timestamp - a.timestamp);
           });
         } else {
-          setPublicEntries(prev => prev.filter(e => e.id !== savedEntry.id));
+          setPublicEntries(prev => prev.filter(e => e.id !== updatedEntry.id));
         }
       } else {
         setEntries(prev => [savedEntry, ...prev]);
