@@ -219,8 +219,13 @@ function ProgressCard({ entry, onEdit, onDelete }: { entry: ProgressEntry; onEdi
       animate={{ opacity: 1, y: 0 }}
       className="glass-card mb-8 group relative overflow-hidden"
       style={{
-        borderLeft: entry.color ? `6px solid ${entry.color}` : undefined,
-        boxShadow: entry.color ? `0 10px 30px -10px ${entry.color}20` : undefined
+        borderLeft: entry.color ? `4px solid ${entry.color}` : undefined,
+        background: entry.color
+          ? `linear-gradient(to right, ${entry.color}08, white 15%)`
+          : undefined,
+        boxShadow: entry.color
+          ? `0 20px 40px -15px ${entry.color}15`
+          : '0 20px 40px -20px rgba(0,0,0,0.1)'
       }}
     >
       <div className="absolute top-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all z-10">
@@ -266,9 +271,9 @@ function ProgressCard({ entry, onEdit, onDelete }: { entry: ProgressEntry; onEdi
         <div className={`flex-1 p-8 flex flex-col justify-between ${entry.type === 'text' ? 'bg-gradient-to-br from-indigo-50/30 to-rose-50/30' : ''}`}>
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <span className={`text-[10px] font-bold px-3 py-1 rounded-full ${entry.type === 'image' ? 'bg-indigo-100 text-indigo-600' :
-                entry.type === 'audio' ? 'bg-rose-100 text-rose-600' :
-                  'bg-slate-100 text-slate-600'
+              <span className={`text-[10px] font-bold px-3 py-1 rounded-full backdrop-blur-sm border border-current/10 ${entry.type === 'image' ? 'bg-indigo-500/10 text-indigo-600' :
+                entry.type === 'audio' ? 'bg-rose-500/10 text-rose-600' :
+                  'bg-slate-500/10 text-slate-600'
                 }`}>
                 {entry.type.toUpperCase()}
               </span>
@@ -278,7 +283,7 @@ function ProgressCard({ entry, onEdit, onDelete }: { entry: ProgressEntry; onEdi
                   if (!cat) return null;
                   const Icon = cat.icon;
                   return (
-                    <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-3 py-1 rounded-full ${cat.bg} ${cat.color} border border-current/10`}>
+                    <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-3 py-1 rounded-full bg-white/40 backdrop-blur-sm ${cat.color} border border-white/20 shadow-sm`}>
                       <Icon size={12} />
                       {cat.label}
                     </span>
