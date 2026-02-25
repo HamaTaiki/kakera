@@ -173,14 +173,14 @@ function ProjectCard({ project, onClick, onEdit, onDelete }: { project: Project;
         <button
           onClick={onEdit}
           className="p-2 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
-          title="箱を編集する"
+          title="プロジェクトを編集する"
         >
           <Pencil size={18} />
         </button>
         <button
           onClick={onDelete}
           className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
-          title="箱を削除する"
+          title="プロジェクトを削除する"
         >
           <Trash2 size={18} />
         </button>
@@ -798,7 +798,7 @@ export default function App() {
   const isSharedView = !!(new URLSearchParams(window.location.search).get('share'));
 
   const handleDeleteProject = async (projectId: string) => {
-    if (!window.confirm('この箱を削除してもよろしいですか？記録されたすべてのカケラも失われます。')) return;
+    if (!window.confirm('このプロジェクトを削除してもよろしいですか？記録されたすべてのカケラも失われます。')) return;
 
     const { error } = await supabase
       .from('projects')
@@ -933,7 +933,7 @@ export default function App() {
                         <Plus size={32} />
                       </div>
                       <h3 className="text-2xl font-bold mb-2">創作を始める</h3>
-                      <p className="text-indigo-100/80 text-sm">新しい創作箱を作って、最初の一歩を踏み出しましょう。</p>
+                      <p className="text-indigo-100/80 text-sm">新しいプロジェクトを作って、最初の一歩を踏み出しましょう。</p>
                       <ArrowRight size={20} className="mt-8 opacity-0 group-hover:opacity-100 group-hover:translate-x-2 transition-all" />
                     </motion.button>
 
@@ -946,7 +946,7 @@ export default function App() {
                       <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center mb-6 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
                         <LayoutGrid size={32} />
                       </div>
-                      <h3 className="text-2xl font-bold text-slate-900 mb-2">創作箱を見る</h3>
+                      <h3 className="text-2xl font-bold text-slate-900 mb-2">プロジェクトを見る</h3>
                       <p className="text-slate-500 text-sm">これまでに集めたカケラや、活動の記録を確認します。</p>
                       <ArrowRight size={20} className="mt-8 text-indigo-600 opacity-0 group-hover:opacity-100 group-hover:translate-x-2 transition-all" />
                     </motion.button>
@@ -963,7 +963,7 @@ export default function App() {
                       <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center mb-6 text-rose-500 group-hover:bg-rose-500 group-hover:text-white transition-colors">
                         <Globe size={32} />
                       </div>
-                      <h3 className="text-2xl font-bold text-slate-900 mb-2">みんなのかけらを見る</h3>
+                      <h3 className="text-2xl font-bold text-slate-900 mb-2">みんなのカケラを見る</h3>
                       <p className="text-slate-500 text-sm">他のクリエイターのカケラを見て、刺激をもらいましょう。</p>
                       <ArrowRight size={20} className="mt-8 text-rose-500 opacity-0 group-hover:opacity-100 group-hover:translate-x-2 transition-all" />
                     </motion.button>
@@ -1059,7 +1059,7 @@ export default function App() {
                   className="primary-button py-3 px-6"
                 >
                   <Plus size={20} />
-                  <span>新しい箱</span>
+                  <span>新しいプロジェクト</span>
                 </button>
               </div>
 
@@ -1072,9 +1072,9 @@ export default function App() {
                     className="col-span-full glass-card py-20 px-8 text-center cursor-pointer hover:bg-white transition-all group border-2 border-dashed border-slate-100 hover:border-indigo-200"
                   >
                     <FolderPlus size={40} className="mx-auto mb-6 text-indigo-400 group-hover:text-indigo-600" />
-                    <h4 className="text-xl font-bold text-slate-900 mb-2">まだ創作箱がありません</h4>
-                    <p className="text-slate-500 mb-8 text-sm">最初の箱を名前をつけて作りましょう。</p>
-                    <button className="primary-button mx-auto py-3 px-8 text-sm">最初の箱を作る</button>
+                    <h4 className="text-xl font-bold text-slate-900 mb-2">まだプロジェクトがありません</h4>
+                    <p className="text-slate-500 mb-8 text-sm">最初のプロジェクトに名前をつけて作りましょう。</p>
+                    <button className="primary-button mx-auto py-3 px-8 text-sm">最初のプロジェクトを作る</button>
                   </div>
                 ) : (
                   projects.map((project) => (
@@ -1114,7 +1114,7 @@ export default function App() {
                   <div className="w-12 h-12 rounded-2xl bg-rose-50 flex items-center justify-center text-rose-500 shadow-sm shadow-rose-100">
                     <Globe size={24} />
                   </div>
-                  <h2 className="text-4xl font-black text-slate-900 tracking-tight">みんなのかけら</h2>
+                  <h2 className="text-4xl font-black text-slate-900 tracking-tight">みんなのカケラ</h2>
                 </div>
               </div>
 
@@ -1162,7 +1162,7 @@ export default function App() {
               <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12 pb-12 border-b border-slate-100 px-2">
                 <div>
                   <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-4 tracking-tight uppercase leading-tight">{selectedProject.name}</h2>
-                  <p className="text-slate-500 text-lg max-w-2xl">{selectedProject.description || 'この箱にはまだ説明がありません。'}</p>
+                  <p className="text-slate-500 text-lg max-w-2xl">{selectedProject.description || 'このプロジェクトにはまだ説明がありません。'}</p>
 
                   <div className="flex flex-wrap items-center gap-4 mt-6">
                     <button
@@ -1270,7 +1270,7 @@ export default function App() {
               <div className="flex justify-between items-center mb-10">
                 <h3 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
                   {editingProject ? <Pencil className="text-indigo-600" /> : <FolderPlus className="text-indigo-600" />}
-                  {editingProject ? '創作箱を磨き直す' : '新しい創作箱を作る'}
+                  {editingProject ? 'プロジェクトを編集する' : '新しいプロジェクトを作る'}
                 </h3>
                 <button onClick={() => {
                   setShowCreateProject(false);
@@ -1284,7 +1284,7 @@ export default function App() {
 
               <div className="space-y-8">
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-3">箱のなまえ</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-3">プロジェクト名</label>
                   <input
                     type="text"
                     value={newProjectName}
@@ -1294,11 +1294,11 @@ export default function App() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-3">どんなカケラを集める？</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-3">どんなカケラを集めるプロジェクトにする？</label>
                   <textarea
                     value={newProjectDesc}
                     onChange={(e) => setNewProjectDesc(e.target.value)}
-                    placeholder="この箱に込める想いや、整理したい内容を自由に書いてください。"
+                    placeholder="このプロジェクトに込める想いや、整理したい内容を自由に書いてください。"
                     className="input-field min-h-[120px] resize-none"
                   />
                 </div>
