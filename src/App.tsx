@@ -698,34 +698,36 @@ export default function App() {
           .from('progress_entries')
           .update(newEntry)
           .eq('id', editingEntry.id)
-          .select('id, type, url, notes, timestamp, project_id, user_id, is_public, category, color')
+          .select()
         : await supabase
           .from('progress_entries')
           .insert([newEntry])
-          .select('id, type, url, notes, timestamp, project_id, user_id, is_public, category, color');
+          .select();
 
       if (dbError) throw dbError;
 
-      const savedEntry = uploadData && uploadData[0] ? uploadData[0] : { ...newEntry, id: editingEntry?.id };
-      console.log('Entry saved successfully:', savedEntry);
+      if (!uploadData || uploadData.length === 0) {
+        throw new Error('データの保存には成功しましたが、戻り値の取得に失敗しました。');
+      }
+
+      const savedEntry = uploadData[0];
+      console.log('Successfully saved to DB:', savedEntry);
 
       if (editingEntry) {
-        // 既存エントリの更新：確実に最新のsavedEntry（DBから返ってきたもの）をマージする
-        const updatedEntry = { ...editingEntry, ...savedEntry };
-        setEntries(prev => prev.map(e => e.id === editingEntry.id ? updatedEntry : e));
-        setPublicEntries(prev => prev.map(e => e.id === editingEntry.id ? updatedEntry : e));
+        // 既存エントリの更新：DBから返ってきた最新の値をそのまま使う
+        setEntries(prev => prev.map(e => e.id === editingEntry.id ? savedEntry : e));
 
-        // 公開設定の同期
-        if (isPublic) {
+        // 公開エントリの同期
+        if (savedEntry.is_public) {
           setPublicEntries(prev => {
-            const exists = prev.find(e => e.id === updatedEntry.id);
+            const exists = prev.find(e => e.id === savedEntry.id);
             if (exists) {
-              return prev.map(e => e.id === updatedEntry.id ? updatedEntry : e);
+              return prev.map(e => e.id === savedEntry.id ? savedEntry : e);
             }
-            return [updatedEntry, ...prev].sort((a, b) => b.timestamp - a.timestamp);
+            return [savedEntry, ...prev].sort((a, b) => b.timestamp - a.timestamp);
           });
         } else {
-          setPublicEntries(prev => prev.filter(e => e.id !== updatedEntry.id));
+          setPublicEntries(prev => prev.filter(e => e.id !== savedEntry.id));
         }
       } else {
         setEntries(prev => [savedEntry, ...prev]);
