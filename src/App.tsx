@@ -563,9 +563,12 @@ export default function App() {
       setUploadType(selectedFile.type.startsWith('image/') ? 'image' : 'audio');
     }
   };
-
   const handleUpload = async () => {
-    if (!uploadType || !selectedProject) return;
+    console.log('handleUpload started', { uploadType, editingEntry, isPublic });
+    if (!uploadType || (!selectedProject && !editingEntry)) {
+      console.warn('Missing required upload data', { uploadType, selectedProject, editingEntry });
+      return;
+    }
     if (uploadType !== 'text' && !file && !editingEntry) return;
     if (uploadType === 'text' && !notes.trim()) return;
 
@@ -575,6 +578,7 @@ export default function App() {
       let finalUrl = '';
 
       if (uploadType !== 'text' && file) {
+        console.log('Uploading file...', file.name);
         const fileExt = file.name.split('.').pop();
         const fileName = `${crypto.randomUUID()}.${fileExt}`;
         const filePath = `${uploadType}s/${fileName}`;
@@ -593,6 +597,7 @@ export default function App() {
           .getPublicUrl(filePath);
 
         finalUrl = publicUrl;
+        console.log('File uploaded successfully', finalUrl);
       }
 
       const newEntry = {
@@ -600,32 +605,50 @@ export default function App() {
         url: uploadType === 'text' ? null : (finalUrl || (editingEntry ? editingEntry.url : null)),
         notes: notes,
         timestamp: editingEntry ? editingEntry.timestamp : Date.now(),
-        project_id: selectedProject.id,
+        project_id: editingEntry ? editingEntry.project_id : (selectedProject?.id || ''),
         user_id: user?.id,
         is_public: isPublic
       };
+
+      console.log('Saving entry...', newEntry);
 
       const { data: uploadData, error: dbError } = editingEntry
         ? await supabase
           .from('progress_entries')
           .update(newEntry)
           .eq('id', editingEntry.id)
-          .select('id, type, url, notes, timestamp, project_id, user_id, is_public')
+          .select()
         : await supabase
           .from('progress_entries')
           .insert([newEntry])
-          .select('id, type, url, notes, timestamp, project_id, user_id, is_public');
+          .select();
 
       if (dbError) throw dbError;
 
+      const savedEntry = uploadData && uploadData[0] ? uploadData[0] : { ...newEntry, id: editingEntry?.id };
+      console.log('Entry saved successfully', savedEntry);
+
       if (editingEntry) {
-        setEntries(prev => prev.map(e => e.id === editingEntry.id ? { ...e, ...uploadData[0] } : e));
-        setPublicEntries(prev => prev.map(e => e.id === editingEntry.id ? { ...e, ...uploadData[0] } : e));
-      } else if (uploadData && uploadData[0]) {
-        setEntries(prev => [uploadData[0], ...prev]);
-        setAllEntries(prev => [{ timestamp: uploadData[0].timestamp }, ...prev]);
+        setEntries(prev => prev.map(e => e.id === editingEntry.id ? { ...e, ...savedEntry } : e));
+        setPublicEntries(prev => prev.map(e => e.id === editingEntry.id ? { ...e, ...savedEntry } : e));
+
+        // 公開設定の同期
         if (isPublic) {
-          setPublicEntries(prev => [uploadData[0], ...prev]);
+          setPublicEntries(prev => {
+            const exists = prev.find(e => e.id === savedEntry.id);
+            if (exists) {
+              return prev.map(e => e.id === savedEntry.id ? { ...e, ...savedEntry } : e);
+            }
+            return [savedEntry, ...prev].sort((a, b) => b.timestamp - a.timestamp);
+          });
+        } else {
+          setPublicEntries(prev => prev.filter(e => e.id !== savedEntry.id));
+        }
+      } else {
+        setEntries(prev => [savedEntry, ...prev]);
+        setAllEntries(prev => [{ timestamp: savedEntry.timestamp }, ...prev]);
+        if (isPublic) {
+          setPublicEntries(prev => [savedEntry, ...prev]);
         }
       }
 
@@ -640,17 +663,17 @@ export default function App() {
       setIsPublic(false);
       setEditingEntry(null);
 
-      // input要素をリセット
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
     } catch (error: any) {
       console.error('Detailed Upload Error:', error);
-      alert(`アップロード失敗: ${error.message || '通信エラーが発生しました'}`);
+      alert(`保存失敗: ${error.message || '通信エラーまたは権限不足です'}`);
     } finally {
       setUploading(false);
     }
   };
+
   const handleCopyShareLink = async (currentShareId: string | undefined) => {
     let shareId = currentShareId;
 
