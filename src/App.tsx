@@ -504,7 +504,7 @@ export default function App() {
   const fetchEntries = async (projectId: string) => {
     const { data, error } = await supabase
       .from('progress_entries')
-      .select('id, type, url, notes, timestamp, project_id, user_id, is_public')
+      .select('id, type, url, notes, timestamp, project_id, user_id, is_public, category, color')
       .eq('project_id', projectId)
       .order('timestamp', { ascending: false });
 
@@ -520,7 +520,7 @@ export default function App() {
     try {
       const { data, error } = await supabase
         .from('progress_entries')
-        .select('id, type, url, notes, timestamp, project_id, user_id, is_public')
+        .select('id, type, url, notes, timestamp, project_id, user_id, is_public, category, color')
         .eq('is_public', true)
         .order('timestamp', { ascending: false });
 
@@ -1400,7 +1400,19 @@ export default function App() {
                         return (
                           <button
                             key={cat.id}
-                            onClick={() => setSelectedCategory(isSelected ? '' : cat.label)}
+                            onClick={() => {
+                              const newCat = isSelected ? '' : cat.label;
+                              setSelectedCategory(newCat);
+                              if (newCat && !selectedColor) {
+                                let defaultColor = '';
+                                if (cat.id === 'idea') defaultColor = '#f59e0b';
+                                if (cat.id === 'draft') defaultColor = '#0ea5e9';
+                                if (cat.id === 'wip') defaultColor = '#6366f1';
+                                if (cat.id === 'favorite') defaultColor = '#f43f5e';
+                                if (cat.id === 'milestone') defaultColor = '#10b981';
+                                setSelectedColor(defaultColor);
+                              }
+                            }}
                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold transition-all border ${isSelected
                               ? `${cat.bg} ${cat.color} border-current ring-2 ring-offset-2 ring-indigo-500`
                               : 'bg-white text-slate-400 border-slate-200 hover:border-slate-300'
