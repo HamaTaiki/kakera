@@ -46,7 +46,7 @@ const COLORS = [
 
 // --- Components ---
 
-function AuthView({ onAuthSuccess }: { onAuthSuccess: () => void }) {
+function AuthView({ onAuthSuccess, onClose }: { onAuthSuccess: () => void; onClose?: () => void }) {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
@@ -85,12 +85,21 @@ function AuthView({ onAuthSuccess }: { onAuthSuccess: () => void }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm">
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="glass-card w-full max-w-md p-10"
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        className="glass-card w-full max-w-md p-10 relative overflow-hidden"
       >
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="absolute top-6 right-6 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all"
+          >
+            <X size={20} />
+          </button>
+        )}
         <div className="flex flex-col items-center mb-10">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-600 to-rose-500 flex items-center justify-center text-white shadow-xl mb-6">
             <Diamond size={32} fill="currentColor" />
@@ -409,6 +418,7 @@ export default function App() {
   const [editingEntry, setEditingEntry] = useState<ProgressEntry | null>(null);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [showCreateProject, setShowCreateProject] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const [newProjectName, setNewProjectName] = useState('');
   const [newProjectDesc, setNewProjectDesc] = useState('');
@@ -838,9 +848,18 @@ export default function App() {
     }
   };
 
-  if (!user && !isSharedView) {
-    return <AuthView onAuthSuccess={fetchProjects} />;
+  if (loading && !isSharedView) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-10 h-10 text-indigo-600 animate-spin" />
+          <p className="text-slate-500 font-bold opacity-0 animate-pulse delay-700" style={{ animationFillMode: 'forwards' }}>Loading Kakera...</p>
+        </div>
+      </div>
+    );
   }
+
+  // 初期表示の認証ガードを削除し、ログインしていない場合でもメインUIを返すように変更
 
   return (
     <div className="min-h-screen py-12 px-6 md:px-12 max-w-6xl mx-auto">
@@ -859,17 +878,24 @@ export default function App() {
               Kakera
             </h1>
             <span className="text-[10px] font-bold text-slate-400 -mt-1 uppercase tracking-widest">
-              {user?.user_metadata?.display_name || 'Guest User'}'s notebook
+              {user ? `${user?.user_metadata?.display_name || 'User'}'s notebook` : 'Guest Mode'}
             </span>
           </div>
         </div>
         <div className="flex items-center gap-4">
-          {!isSharedView && (
+          {!isSharedView && user ? (
             <button
               onClick={() => supabase.auth.signOut()}
               className="p-2 text-slate-400 hover:text-rose-500 transition-colors text-xs font-bold uppercase tracking-wider"
             >
               Logout
+            </button>
+          ) : !isSharedView && (
+            <button
+              onClick={() => setShowAuthModal(true)}
+              className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-bold hover:bg-indigo-100 transition-colors"
+            >
+              Login / Signup
             </button>
           )}
           {view !== 'home' && !isSharedView && (
@@ -926,7 +952,13 @@ export default function App() {
                     <motion.button
                       whileHover={{ y: -5, scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={() => setShowCreateProject(true)}
+                      onClick={() => {
+                        if (!user) {
+                          setShowAuthModal(true);
+                        } else {
+                          setShowCreateProject(true);
+                        }
+                      }}
                       className="glass-card p-10 text-left group border-none bg-indigo-600 text-white shadow-xl shadow-indigo-200"
                     >
                       <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
@@ -940,7 +972,13 @@ export default function App() {
                     <motion.button
                       whileHover={{ y: -5, scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={() => setView('dashboard')}
+                      onClick={() => {
+                        if (!user) {
+                          setShowAuthModal(true);
+                        } else {
+                          setView('dashboard');
+                        }
+                      }}
                       className="glass-card p-10 text-left group border-none bg-white shadow-xl shadow-slate-200/50"
                     >
                       <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center mb-6 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
@@ -1558,6 +1596,19 @@ export default function App() {
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* --- Auth Modal --- */}
+      <AnimatePresence>
+        {showAuthModal && (
+          <AuthView
+            onAuthSuccess={() => {
+              setShowAuthModal(false);
+              fetchProjects();
+            }}
+            onClose={() => setShowAuthModal(false)}
+          />
         )}
       </AnimatePresence>
     </div>
