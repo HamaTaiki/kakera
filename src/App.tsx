@@ -161,7 +161,7 @@ function AuthView({ onAuthSuccess }: { onAuthSuccess: () => void }) {
   );
 }
 
-function ProjectCard({ project, onClick, onDelete }: { project: Project; onClick: () => void; onDelete: (e: React.MouseEvent) => void }) {
+function ProjectCard({ project, onClick, onEdit, onDelete }: { project: Project; onClick: () => void; onEdit: (e: React.MouseEvent) => void; onDelete: (e: React.MouseEvent) => void }) {
   return (
     <motion.div
       whileHover={{ y: -5, scale: 1.02 }}
@@ -169,13 +169,22 @@ function ProjectCard({ project, onClick, onDelete }: { project: Project; onClick
       onClick={onClick}
       className="glass-card p-8 cursor-pointer group relative"
     >
-      <button
-        onClick={onDelete}
-        className="absolute top-6 right-6 p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl opacity-0 group-hover:opacity-100 transition-all z-10"
-        title="箱を削除する"
-      >
-        <Trash2 size={18} />
-      </button>
+      <div className="absolute top-6 right-6 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all z-10">
+        <button
+          onClick={onEdit}
+          className="p-2 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+          title="箱を編集する"
+        >
+          <Pencil size={18} />
+        </button>
+        <button
+          onClick={onDelete}
+          className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+          title="箱を削除する"
+        >
+          <Trash2 size={18} />
+        </button>
+      </div>
 
       <div className="flex justify-between items-start mb-6">
         <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-300">
@@ -398,6 +407,7 @@ export default function App() {
   const [uploading, setUploading] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [editingEntry, setEditingEntry] = useState<ProgressEntry | null>(null);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [showCreateProject, setShowCreateProject] = useState(false);
 
   const [newProjectName, setNewProjectName] = useState('');
@@ -541,37 +551,61 @@ export default function App() {
   const handleCreateProject = async () => {
     if (!newProjectName) return;
     setUploading(true);
-    const newProject = {
-      name: newProjectName,
-      description: newProjectDesc,
-      user_id: user?.id,
-      share_id: crypto.randomUUID() // 共有リンクを最初から作成
-    };
 
-    const { data, error } = await supabase
-      .from('projects')
-      .insert([newProject])
-      .select('id, name, description, created_at, user_id');
+    try {
+      if (editingProject) {
+        const { data, error } = await supabase
+          .from('projects')
+          .update({
+            name: newProjectName,
+            description: newProjectDesc
+          })
+          .eq('id', editingProject.id)
+          .select();
 
-    if (error) {
-      alert(`エラー: ${error.message}`);
-    } else if (data && data[0]) {
-      // URLから共有IDを削除して、自分のダッシュボードモードに切り替える
-      if (window.location.search.includes('share=')) {
-        window.history.replaceState({}, '', window.location.pathname);
+        if (error) throw error;
+
+        if (data && data[0]) {
+          const updatedProject = { ...editingProject, ...data[0] };
+          setProjects(prev => prev.map(p => p.id === editingProject.id ? updatedProject : p));
+          if (selectedProject?.id === editingProject.id) {
+            setSelectedProject(updatedProject);
+          }
+          setShowCreateProject(false);
+          setEditingProject(null);
+          setNewProjectName('');
+          setNewProjectDesc('');
+        }
+      } else {
+        const newProject = {
+          name: newProjectName,
+          description: newProjectDesc,
+          user_id: user?.id,
+          share_id: crypto.randomUUID()
+        };
+
+        const { data, error } = await supabase
+          .from('projects')
+          .insert([newProject])
+          .select('id, name, description, created_at, user_id');
+
+        if (error) throw error;
+
+        if (data && data[0]) {
+          const createdProject = { ...data[0], share_id: newProject.share_id };
+          setProjects(prev => [createdProject, ...prev]);
+          setShowCreateProject(false);
+          setNewProjectName('');
+          setNewProjectDesc('');
+          setView('dashboard');
+          handleSelectProject(createdProject);
+        }
       }
-
-      const createdProject = { ...data[0], share_id: newProject.share_id };
-      setProjects(prev => [createdProject, ...prev]);
-      setShowCreateProject(false);
-      setNewProjectName('');
-      setNewProjectDesc('');
-
-      // 作成後はダッシュボードへ遷移して選択状態にする
-      setView('dashboard');
-      handleSelectProject(createdProject);
+    } catch (error: any) {
+      alert(`エラー: ${error.message}`);
+    } finally {
+      setUploading(false);
     }
-    setUploading(false);
   };
 
   const handleSelectProject = (project: Project) => {
@@ -1046,6 +1080,13 @@ export default function App() {
                       key={project.id}
                       project={project}
                       onClick={() => handleSelectProject(project)}
+                      onEdit={(e) => {
+                        e.stopPropagation();
+                        setEditingProject(project);
+                        setNewProjectName(project.name);
+                        setNewProjectDesc(project.description || '');
+                        setShowCreateProject(true);
+                      }}
                       onDelete={(e) => {
                         e.stopPropagation();
                         handleDeleteProject(project.id);
@@ -1226,10 +1267,15 @@ export default function App() {
             >
               <div className="flex justify-between items-center mb-10">
                 <h3 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
-                  <FolderPlus className="text-indigo-600" />
-                  新しい創作箱を作る
+                  {editingProject ? <Pencil className="text-indigo-600" /> : <FolderPlus className="text-indigo-600" />}
+                  {editingProject ? '創作箱を磨き直す' : '新しい創作箱を作る'}
                 </h3>
-                <button onClick={() => setShowCreateProject(false)} className="text-slate-400 hover:text-slate-900 transition-colors">
+                <button onClick={() => {
+                  setShowCreateProject(false);
+                  setEditingProject(null);
+                  setNewProjectName('');
+                  setNewProjectDesc('');
+                }} className="text-slate-400 hover:text-slate-900 transition-colors">
                   <X size={28} />
                 </button>
               </div>
@@ -1250,18 +1296,32 @@ export default function App() {
                   <textarea
                     value={newProjectDesc}
                     onChange={(e) => setNewProjectDesc(e.target.value)}
-                    placeholder="この創作の目的やイメージを書いておこう..."
+                    placeholder="この箱に込める想いや、整理したい内容を自由に書いてください。"
                     className="input-field min-h-[120px] resize-none"
                   />
                 </div>
-                <button
-                  onClick={handleCreateProject}
-                  disabled={!newProjectName || uploading}
-                  className="primary-button w-full py-5 text-lg"
-                >
-                  {uploading ? <Loader2 className="animate-spin" /> : <Gem size={20} />}
-                  <span>創作を開始する</span>
-                </button>
+
+                <div className="flex gap-4 pt-4">
+                  <button
+                    onClick={() => {
+                      setShowCreateProject(false);
+                      setEditingProject(null);
+                      setNewProjectName('');
+                      setNewProjectDesc('');
+                    }}
+                    className="secondary-button flex-1 py-4"
+                  >
+                    キャンセル
+                  </button>
+                  <button
+                    onClick={handleCreateProject}
+                    disabled={!newProjectName || uploading}
+                    className="primary-button flex-[2] py-4"
+                  >
+                    {uploading ? <Loader2 className="animate-spin" /> : <Diamond size={20} />}
+                    <span>{uploading ? '磨き中...' : editingProject ? '修正を保存する' : '新しく作る'}</span>
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>
