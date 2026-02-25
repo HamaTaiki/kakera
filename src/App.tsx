@@ -15,11 +15,12 @@ interface Project {
 
 interface ProgressEntry {
   id: string;
-  type: 'image' | 'audio';
-  url: string;
+  type: 'image' | 'audio' | 'text';
+  url?: string;
   notes: string;
   timestamp: number;
   project_id: string;
+  user_id?: string;
 }
 
 // --- Components ---
@@ -208,27 +209,32 @@ function ProgressCard({ entry, onDelete }: { entry: ProgressEntry; onDelete?: ()
       )}
 
       <div className="flex flex-col md:flex-row">
-        <div className="w-full md:w-1/3 aspect-video md:aspect-square bg-slate-50 relative overflow-hidden">
-          {entry.type === 'image' ? (
-            <img src={entry.url} className="w-full h-full object-cover" alt="Progress" />
-          ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-50 to-rose-50">
-              <Music size={40} className="text-indigo-300 mb-4" />
-              <button
-                onClick={togglePlay}
-                className="w-14 h-14 rounded-full bg-white shadow-xl flex items-center justify-center text-indigo-600 hover:scale-110 transition-transform"
-              >
-                {isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" className="ml-1" />}
-              </button>
-              <audio ref={audioRef} src={entry.url} onEnded={() => setIsPlaying(false)} className="hidden" />
-            </div>
-          )}
-        </div>
-        <div className="flex-1 p-8 flex flex-col justify-between">
+        {entry.type !== 'text' && (
+          <div className="w-full md:w-1/3 aspect-video md:aspect-square bg-slate-50 relative overflow-hidden">
+            {entry.type === 'image' ? (
+              <img src={entry.url} className="w-full h-full object-cover" alt="Progress" />
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-50 to-rose-50">
+                <Music size={40} className="text-indigo-300 mb-4" />
+                <button
+                  onClick={togglePlay}
+                  className="w-14 h-14 rounded-full bg-white shadow-xl flex items-center justify-center text-indigo-600 hover:scale-110 transition-transform"
+                >
+                  {isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" className="ml-1" />}
+                </button>
+                <audio ref={audioRef} src={entry.url} onEnded={() => setIsPlaying(false)} className="hidden" />
+              </div>
+            )}
+          </div>
+        )}
+        <div className={`flex-1 p-8 flex flex-col justify-between ${entry.type === 'text' ? 'bg-gradient-to-br from-indigo-50/30 to-rose-50/30' : ''}`}>
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <span className={`text-[10px] font-bold px-3 py-1 rounded-full ${entry.type === 'image' ? 'bg-indigo-100 text-indigo-600' : 'bg-rose-100 text-rose-600'}`}>
-                {entry.type === 'image' ? 'IMAGE' : 'AUDIO'}
+              <span className={`text-[10px] font-bold px-3 py-1 rounded-full ${entry.type === 'image' ? 'bg-indigo-100 text-indigo-600' :
+                entry.type === 'audio' ? 'bg-rose-100 text-rose-600' :
+                  'bg-slate-100 text-slate-600'
+                }`}>
+                {entry.type.toUpperCase()}
               </span>
               <span className="text-xs text-slate-400 font-medium">
                 {new Date(entry.timestamp).toLocaleString('ja-JP', {
@@ -236,13 +242,90 @@ function ProgressCard({ entry, onDelete }: { entry: ProgressEntry; onDelete?: ()
                 })}
               </span>
             </div>
-            <p className="text-slate-700 leading-relaxed whitespace-pre-wrap text-lg font-medium">
+            {entry.type === 'text' && <Quote className="text-indigo-100 mb-4" size={32} />}
+            <p className={`text-slate-700 leading-relaxed whitespace-pre-wrap ${entry.type === 'text' ? 'text-xl font-bold italic' : 'text-lg font-medium'}`}>
               {entry.notes || 'メモはありません。'}
             </p>
           </div>
         </div>
       </div>
     </motion.div>
+  );
+}
+
+function ActivityHeatmap({ entries }: { entries: { timestamp: number }[] }) {
+  const [hoverDate, setHoverDate] = useState<string | null>(null);
+
+  // 直近90日間のデータを生成
+  const days = Array.from({ length: 90 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (89 - i));
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
+
+  const dailyCounts = entries.reduce((acc: Record<string, number>, entry) => {
+    const d = new Date(entry.timestamp);
+    d.setHours(0, 0, 0, 0);
+    const key = d.toISOString();
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+
+  const getLevel = (count: number) => {
+    if (!count) return 'bg-slate-100';
+    if (count === 1) return 'bg-indigo-200';
+    if (count === 2) return 'bg-indigo-400';
+    return 'bg-indigo-600';
+  };
+
+  return (
+    <div className="glass-card p-8 mb-16 relative overflow-hidden group">
+      <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50/50 rounded-full -mr-32 -mt-32 blur-3xl group-hover:bg-indigo-100/50 transition-colors duration-700" />
+
+      <div className="relative z-10">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-200">
+            <Zap size={18} fill="currentColor" />
+          </div>
+          <h3 className="text-lg font-bold text-slate-900 tracking-tight">あなたの創作リズム</h3>
+          <div className="ml-auto flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+            <span>Last 90 Days</span>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-1.5 mb-6">
+          {days.map((day) => {
+            const key = day.toISOString();
+            const count = dailyCounts[key] || 0;
+            return (
+              <div
+                key={key}
+                onMouseEnter={() => setHoverDate(`${day.toLocaleDateString()}: ${count}個のカケラ`)}
+                onMouseLeave={() => setHoverDate(null)}
+                className={`w-3.5 h-3.5 rounded-sm transition-all duration-300 hover:scale-125 hover:z-20 cursor-help ${getLevel(count)}`}
+              />
+            );
+          })}
+        </div>
+
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-bold text-slate-400 italic min-h-[1.25rem]">
+            {hoverDate || 'カケラを積み上げた日数が輝きます'}
+          </p>
+          <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+            <span>Less</span>
+            <div className="flex gap-1">
+              <div className="w-2 h-2 rounded-sm bg-slate-100" />
+              <div className="w-2 h-2 rounded-sm bg-indigo-200" />
+              <div className="w-2 h-2 rounded-sm bg-indigo-400" />
+              <div className="w-2 h-2 rounded-sm bg-indigo-600" />
+            </div>
+            <span>More</span>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -254,6 +337,7 @@ export default function App() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [entries, setEntries] = useState<ProgressEntry[]>([]);
+  const [allEntries, setAllEntries] = useState<{ timestamp: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
@@ -262,7 +346,7 @@ export default function App() {
   const [newProjectName, setNewProjectName] = useState('');
   const [newProjectDesc, setNewProjectDesc] = useState('');
 
-  const [uploadType, setUploadType] = useState<'image' | 'audio' | null>(null);
+  const [uploadType, setUploadType] = useState<'image' | 'audio' | 'text' | null>(null);
   const [notes, setNotes] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -345,8 +429,20 @@ export default function App() {
       console.error('Error fetching projects:', error);
     } else {
       setProjects(data || []);
+      fetchAllEntries(currentUser);
     }
     setLoading(false);
+  };
+
+  const fetchAllEntries = async (currentUser: User) => {
+    const { data, error } = await supabase
+      .from('progress_entries')
+      .select('timestamp')
+      .eq('user_id', currentUser.id);
+
+    if (!error) {
+      setAllEntries(data || []);
+    }
   };
 
   const fetchEntries = async (projectId: string) => {
@@ -425,30 +521,39 @@ export default function App() {
   };
 
   const handleUpload = async () => {
-    if (!file || !uploadType || !selectedProject) return;
+    if (!uploadType || !selectedProject) return;
+    if (uploadType !== 'text' && !file) return;
+    if (uploadType === 'text' && !notes.trim()) return;
+
     setUploading(true);
 
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${crypto.randomUUID()}.${fileExt}`;
-      const filePath = `${uploadType}s/${fileName}`;
+      let finalUrl = '';
 
-      const { error: uploadError } = await supabase.storage
-        .from('progress_files')
-        .upload(filePath, file, {
-          contentType: file.type,
-          upsert: false
-        });
+      if (uploadType !== 'text' && file) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${crypto.randomUUID()}.${fileExt}`;
+        const filePath = `${uploadType}s/${fileName}`;
 
-      if (uploadError) throw uploadError;
+        const { error: uploadError } = await supabase.storage
+          .from('progress_files')
+          .upload(filePath, file, {
+            contentType: file.type,
+            upsert: false
+          });
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('progress_files')
-        .getPublicUrl(filePath);
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('progress_files')
+          .getPublicUrl(filePath);
+
+        finalUrl = publicUrl;
+      }
 
       const newEntry = {
         type: uploadType,
-        url: publicUrl,
+        url: finalUrl || undefined,
         notes: notes,
         timestamp: Date.now(),
         project_id: selectedProject.id,
@@ -464,6 +569,7 @@ export default function App() {
 
       if (uploadData && uploadData[0]) {
         setEntries(prev => [uploadData[0], ...prev]);
+        setAllEntries(prev => [{ timestamp: uploadData[0].timestamp }, ...prev]);
       } else {
         await fetchEntries(selectedProject.id);
       }
@@ -717,11 +823,15 @@ export default function App() {
                 </div>
               </section>
 
-              <div className="flex items-center justify-between mb-10 px-2">
-                <div className="flex items-center gap-3">
-                  <LayoutGrid size={24} className="text-indigo-600" />
-                  <h3 className="text-2xl font-bold text-slate-900 tracking-tight">あなたの創作箱</h3>
+              <div className="mb-10 px-2">
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-3">
+                    <LayoutGrid size={24} className="text-indigo-600" />
+                    <h3 className="text-2xl font-bold text-slate-900 tracking-tight">あなたの創作箱</h3>
+                  </div>
                 </div>
+
+                {projects.length > 0 && <ActivityHeatmap entries={allEntries} />}
               </div>
 
               {loading ? (
@@ -912,40 +1022,73 @@ export default function App() {
                 </button>
               </div>
 
-              <div className="space-y-8">
-                {!previewUrl ? (
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className="aspect-video rounded-3xl border-2 border-dashed border-slate-200 hover:border-indigo-400 transition-all cursor-pointer flex flex-col items-center justify-center gap-4 bg-slate-50 group"
+              <div className="space-y-6">
+                <div className="flex p-1 bg-slate-100 rounded-2xl">
+                  <button
+                    onClick={() => {
+                      setUploadType(null);
+                      setPreviewUrl(null);
+                      setFile(null);
+                    }}
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all ${uploadType !== 'text' ? 'bg-white shadow-md text-indigo-600' : 'text-slate-400 hover:text-slate-600'
+                      }`}
                   >
-                    <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                      <Sparkles className="text-indigo-500" size={32} />
-                    </div>
-                    <p className="text-slate-400 text-sm font-bold">画像または音声のカケラを選択してください</p>
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileChange}
-                      accept="image/*,audio/*"
-                      className="hidden"
-                    />
-                  </div>
-                ) : (
-                  <div className="relative rounded-3xl overflow-hidden aspect-video bg-slate-50 border border-slate-100 group">
-                    {uploadType === 'image' ? (
-                      <img src={previewUrl} className="w-full h-full object-cover" alt="Preview" />
-                    ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-indigo-50 to-rose-50">
-                        <Music size={48} className="text-indigo-300" />
-                        <p className="text-slate-600 font-bold">音のカケラを読み込みました</p>
-                      </div>
-                    )}
-                    <button
-                      onClick={() => { setPreviewUrl(null); setFile(null); }}
-                      className="absolute top-4 right-4 p-2 bg-white/90 shadow-lg rounded-full text-slate-600 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100 transition-opacity"
+                    <ImageIcon size={18} />
+                    <span>メディア</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setUploadType('text');
+                      setPreviewUrl(null);
+                      setFile(null);
+                    }}
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all ${uploadType === 'text' ? 'bg-white shadow-md text-indigo-600' : 'text-slate-400 hover:text-slate-600'
+                      }`}
+                  >
+                    <Quote size={18} />
+                    <span>テキスト</span>
+                  </button>
+                </div>
+
+                {uploadType !== 'text' ? (
+                  !previewUrl ? (
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="aspect-video rounded-3xl border-2 border-dashed border-slate-200 hover:border-indigo-400 transition-all cursor-pointer flex flex-col items-center justify-center gap-4 bg-slate-50 group"
                     >
-                      <X size={18} />
-                    </button>
+                      <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                        <Sparkles className="text-indigo-500" size={32} />
+                      </div>
+                      <p className="text-slate-400 text-sm font-bold">画像または音声のカケラを選択</p>
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        accept="image/*,audio/*"
+                        className="hidden"
+                      />
+                    </div>
+                  ) : (
+                    <div className="relative rounded-3xl overflow-hidden aspect-video bg-slate-50 border border-slate-100 group">
+                      {uploadType === 'image' ? (
+                        <img src={previewUrl} className="w-full h-full object-cover" alt="Preview" />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-indigo-50 to-rose-50">
+                          <Music size={48} className="text-indigo-300" />
+                          <p className="text-slate-600 font-bold">音のカケラを読み込みました</p>
+                        </div>
+                      )}
+                      <button
+                        onClick={() => { setPreviewUrl(null); setFile(null); }}
+                        className="absolute top-4 right-4 p-2 bg-white/90 shadow-lg rounded-full text-slate-600 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
+                  )
+                ) : (
+                  <div className="aspect-[2/1] bg-gradient-to-br from-indigo-50 to-rose-50 rounded-3xl flex items-center justify-center border border-slate-100">
+                    <Quote className="text-indigo-200" size={64} />
                   </div>
                 )}
 
