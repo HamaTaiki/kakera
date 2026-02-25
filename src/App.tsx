@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Plus, Image as ImageIcon, Music, Send, X, Play, Pause, Clock, Loader2, AlertCircle, LayoutGrid, FolderPlus, ChevronLeft, ArrowRight, Layers, Sparkles, Rocket, Zap, Gem, Diamond, Search, Heart, Quote, Compass, Trash2, Globe } from 'lucide-react';
+import { Plus, Image as ImageIcon, Music, Send, X, Play, Pause, Clock, Loader2, AlertCircle, LayoutGrid, FolderPlus, ChevronLeft, ArrowRight, Layers, Sparkles, Rocket, Zap, Gem, Diamond, Search, Heart, Quote, Compass, Trash2, Globe, Pencil } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
 import { User } from '@supabase/supabase-js';
@@ -177,7 +177,7 @@ function ProjectCard({ project, onClick, onDelete }: { project: Project; onClick
   );
 }
 
-function ProgressCard({ entry, onDelete }: { entry: ProgressEntry; onDelete?: () => void }) {
+function ProgressCard({ entry, onEdit, onDelete }: { entry: ProgressEntry; onEdit?: () => void; onDelete?: () => void }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -199,15 +199,26 @@ function ProgressCard({ entry, onDelete }: { entry: ProgressEntry; onDelete?: ()
       animate={{ opacity: 1, y: 0 }}
       className="glass-card mb-8 group relative"
     >
-      {onDelete && (
-        <button
-          onClick={onDelete}
-          className="absolute top-4 right-4 p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl opacity-0 group-hover:opacity-100 transition-all z-10"
-          title="カケラを削除する"
-        >
-          <Trash2 size={16} />
-        </button>
-      )}
+      <div className="absolute top-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all z-10">
+        {onEdit && (
+          <button
+            onClick={onEdit}
+            className="p-2 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+            title="カケラを編集する"
+          >
+            <Pencil size={16} />
+          </button>
+        )}
+        {onDelete && (
+          <button
+            onClick={onDelete}
+            className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+            title="カケラを削除する"
+          >
+            <Trash2 size={16} />
+          </button>
+        )}
+      </div>
 
       <div className="flex flex-col md:flex-row">
         {entry.type !== 'text' && (
@@ -344,6 +355,7 @@ export default function App() {
   const [publicLoading, setPublicLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<ProgressEntry | null>(null);
   const [showCreateProject, setShowCreateProject] = useState(false);
 
   const [newProjectName, setNewProjectName] = useState('');
@@ -585,37 +597,48 @@ export default function App() {
 
       const newEntry = {
         type: uploadType,
-        url: finalUrl || null,
+        url: finalUrl || (editingEntry ? editingEntry.url : null),
         notes: notes,
-        timestamp: Date.now(),
+        timestamp: editingEntry ? editingEntry.timestamp : Date.now(),
         project_id: selectedProject.id,
         user_id: user?.id,
         is_public: isPublic
       };
 
-      const { data: uploadData, error: dbError } = await supabase
-        .from('progress_entries')
-        .insert([newEntry])
-        .select('id, type, url, notes, timestamp, project_id, user_id, is_public');
+      const { data: uploadData, error: dbError } = editingEntry
+        ? await supabase
+          .from('progress_entries')
+          .update(newEntry)
+          .eq('id', editingEntry.id)
+          .select('id, type, url, notes, timestamp, project_id, user_id, is_public')
+        : await supabase
+          .from('progress_entries')
+          .insert([newEntry])
+          .select('id, type, url, notes, timestamp, project_id, user_id, is_public');
 
       if (dbError) throw dbError;
 
-      if (uploadData && uploadData[0]) {
+      if (editingEntry) {
+        setEntries(prev => prev.map(e => e.id === editingEntry.id ? { ...e, ...uploadData[0] } : e));
+        setPublicEntries(prev => prev.map(e => e.id === editingEntry.id ? { ...e, ...uploadData[0] } : e));
+      } else if (uploadData && uploadData[0]) {
         setEntries(prev => [uploadData[0], ...prev]);
         setAllEntries(prev => [{ timestamp: uploadData[0].timestamp }, ...prev]);
-      } else {
-        await fetchEntries(selectedProject.id);
+        if (isPublic) {
+          setPublicEntries(prev => [uploadData[0], ...prev]);
+        }
       }
 
       setShowUpload(false);
       setNotes('');
       setFile(null);
-      if (previewUrl) {
+      if (previewUrl && (!editingEntry || previewUrl !== editingEntry.url)) {
         URL.revokeObjectURL(previewUrl);
-        setPreviewUrl(null);
       }
+      setPreviewUrl(null);
       setUploadType(null);
       setIsPublic(false);
+      setEditingEntry(null);
 
       // input要素をリセット
       if (fileInputRef.current) {
@@ -672,6 +695,15 @@ export default function App() {
     } else {
       await fetchProjects();
     }
+  };
+
+  const handleEdit = (entry: ProgressEntry) => {
+    setEditingEntry(entry);
+    setUploadType(entry.type);
+    setNotes(entry.notes);
+    setIsPublic(entry.is_public || false);
+    setPreviewUrl(entry.url || null);
+    setShowUpload(true);
   };
 
   const handleDeleteEntry = async (entryId: string) => {
@@ -978,6 +1010,7 @@ export default function App() {
                     <ProgressCard
                       key={entry.id}
                       entry={entry}
+                      onEdit={user?.id === entry.user_id ? () => handleEdit(entry) : undefined}
                     />
                   ))}
                 </div>
@@ -1047,6 +1080,7 @@ export default function App() {
                       <ProgressCard
                         key={entry.id}
                         entry={entry}
+                        onEdit={isSharedView ? undefined : () => handleEdit(entry)}
                         onDelete={isSharedView ? undefined : () => handleDeleteEntry(entry.id)}
                       />
                     ))}
@@ -1126,9 +1160,21 @@ export default function App() {
               <div className="flex justify-between items-center mb-10">
                 <div>
                   <p className="text-indigo-600 font-bold text-[10px] uppercase tracking-widest mb-1 font-display tracking-wider mb-2">{selectedProject.name}</p>
-                  <h3 className="text-2xl font-bold text-slate-900">カケラを残す</h3>
+                  <h3 className="text-2xl font-bold text-slate-900">
+                    {editingEntry ? 'カケラを磨く' : 'カケラを残す'}
+                  </h3>
                 </div>
-                <button onClick={() => setShowUpload(false)} className="text-slate-400 hover:text-slate-900 transition-colors">
+                <button
+                  onClick={() => {
+                    setShowUpload(false);
+                    setEditingEntry(null);
+                    setNotes('');
+                    setFile(null);
+                    setPreviewUrl(null);
+                    setUploadType(null);
+                  }}
+                  className="text-slate-400 hover:text-slate-900 transition-colors"
+                >
                   <X size={28} />
                 </button>
               </div>
@@ -1233,7 +1279,17 @@ export default function App() {
                 </div>
 
                 <div className="flex gap-4">
-                  <button onClick={() => setShowUpload(false)} className="secondary-button flex-1 py-5">
+                  <button
+                    onClick={() => {
+                      setShowUpload(false);
+                      setEditingEntry(null);
+                      setNotes('');
+                      setFile(null);
+                      setPreviewUrl(null);
+                      setUploadType(null);
+                    }}
+                    className="secondary-button flex-1 py-5"
+                  >
                     やめる
                   </button>
                   <button
