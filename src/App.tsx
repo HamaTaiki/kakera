@@ -737,13 +737,6 @@ export default function App() {
         }
       }
 
-      // 念のため最新データをDBから再取得して同期を確実にする
-      if (view === 'project' && selectedProject) {
-        fetchEntries(selectedProject.id);
-      } else if (view === 'public') {
-        fetchPublicEntries();
-      }
-
       setShowUpload(false);
       setNotes('');
       setFile(null);
