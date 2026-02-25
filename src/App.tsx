@@ -736,10 +736,16 @@ export default function App() {
                     <Sparkles size={14} />
                     <span>創作のカケラ、未来の輝き。</span>
                   </div>
-                  <h2 className="text-5xl md:text-8xl font-black text-slate-900 tracking-tighter leading-none mb-12">
-                    Start Your <br />
-                    Creative <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-rose-500">Journey</span>
+                  <h2 className="text-5xl md:text-8xl font-black text-slate-900 tracking-tighter leading-none mb-8">
+                    Collect <br />
+                    Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-rose-500">Kakera</span>
                   </h2>
+                  <p className="text-xl md:text-2xl text-slate-500 font-medium leading-relaxed max-w-2xl mb-12">
+                    <span className="inline-block text-slate-900 font-bold">完璧じゃなくていい。</span><br />
+                    <span className="inline-block">その一歩、その一瞬。</span><br />
+                    <span className="inline-block">Kakeraは、未完成の美しさを</span>
+                    <span className="inline-block">大切に積み上げていく場所です。</span>
+                  </p>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <motion.button
@@ -779,7 +785,7 @@ export default function App() {
                       <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center mb-6 text-rose-500 group-hover:bg-rose-500 group-hover:text-white transition-colors">
                         <Search size={32} />
                       </div>
-                      <h3 className="text-2xl font-bold text-slate-900 mb-2">探索する</h3>
+                      <h3 className="text-2xl font-bold text-slate-900 mb-2">みんなのかけらを見る</h3>
                       <p className="text-slate-500 text-sm">他のクリエイターのカケラを見て、刺激をもらいましょう。</p>
                       <ArrowRight size={20} className="mt-8 text-rose-500 opacity-0 group-hover:opacity-100 group-hover:translate-x-2 transition-all" />
                     </motion.button>
@@ -788,7 +794,8 @@ export default function App() {
               </section>
 
               {/* Story Section */}
-              <section className="mb-20 px-2 relative">
+              <section className="mb-40 px-2 relative">
+                <div className="absolute -left-12 top-0 w-1 h-full bg-gradient-to-b from-indigo-500/0 via-indigo-500/20 to-rose-500/0 hidden md:block" />
                 <div className="max-w-3xl">
                   <motion.div
                     initial={{ opacity: 0, x: -20 }}
@@ -800,10 +807,54 @@ export default function App() {
                       <Heart size={24} fill="currentColor" className="text-rose-400" />
                       <span className="text-sm font-bold uppercase tracking-[0.2em]">Our Thought</span>
                     </div>
-                    <div className="space-y-6 text-slate-600 text-lg leading-relaxed font-medium overflow-hidden">
+                    <h3 className="text-3xl md:text-5xl font-black text-slate-900 mb-10 leading-tight tracking-tight uppercase">
+                      「完璧な作品」の陰に、<br />
+                      隠したままの想いはありませんか？
+                    </h3>
+
+                    <div className="space-y-8 text-slate-600 text-lg md:text-xl leading-relaxed font-medium">
                       <p>
-                        Kakeraは、未完成な美しさを「いま、ここにある価値」として愛でるための場所です。あなたのひたむきなプロセスが、いつか誰かの光になるように。
+                        <span className="inline-block">世の中に溢れているのは、</span>
+                        <span className="inline-block">磨き上げられた「完成品」ばかり。</span><br />
+                        <span className="inline-block">それを見て、自分の未完成なプロセスを</span>
+                        <span className="inline-block">恥じて、隠してしまっていませんか？</span>
                       </p>
+                      <div className="pl-6 border-l-4 border-indigo-100 py-2">
+                        <Quote className="text-indigo-200 mb-4" size={32} />
+                        <p className="text-slate-900 font-bold">
+                          <span className="inline-block">創作の本当の価値は、完成品の中だけでなく</span><br />
+                          <span className="inline-block">そこに至るまでの「カケラ」のような</span>
+                          <span className="inline-block">日々に宿っています。</span>
+                        </p>
+                      </div>
+                      <p>
+                        <span className="inline-block">迷い、悩み、挑戦した証。</span><br />
+                        <span className="inline-block">Kakeraは、未完成な美しさを</span>
+                        <span className="inline-block">「いま、ここにある価値」として</span>
+                        <span className="inline-block">愛でるための場所です。</span>
+                      </p>
+                      <p>
+                        <span className="inline-block">あなたのひたむきなプロセスが、</span>
+                        <span className="inline-block">いつか誰かの光になるように。</span>
+                      </p>
+                    </div>
+
+                    <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+                      <div className="glass-card p-6 bg-indigo-50/30 border-none">
+                        <Zap size={24} className="text-indigo-500 mb-4" />
+                        <h4 className="font-bold text-slate-900 mb-2">記録する</h4>
+                        <p className="text-sm text-slate-500">飾らない、剥き出しのアイデアをありのままに。</p>
+                      </div>
+                      <div className="glass-card p-6 bg-rose-50/30 border-none">
+                        <Compass size={24} className="text-rose-500 mb-4" />
+                        <h4 className="font-bold text-slate-900 mb-2">見つける</h4>
+                        <p className="text-sm text-slate-500">完璧な作品にはない、人間らしい葛藤を。</p>
+                      </div>
+                      <div className="glass-card p-6 bg-slate-50 border-none">
+                        <Sparkles size={24} className="text-amber-500 mb-4" />
+                        <h4 className="font-bold text-slate-900 mb-2">輝かせる</h4>
+                        <p className="text-sm text-slate-500">未完成なカケラが、誰かの力に変わる。</p>
+                      </div>
                     </div>
                   </motion.div>
                 </div>
