@@ -219,12 +219,12 @@ function ProgressCard({ entry, onEdit, onDelete }: { entry: ProgressEntry; onEdi
       animate={{ opacity: 1, y: 0 }}
       className="glass-card mb-8 group relative overflow-hidden"
       style={{
-        borderLeft: entry.color ? `4px solid ${entry.color}` : undefined,
+        borderLeft: entry.color ? `5px solid ${entry.color}` : undefined,
         background: entry.color
-          ? `linear-gradient(to right, ${entry.color}08, white 15%)`
+          ? `linear-gradient(135deg, ${entry.color}15 0%, rgba(255, 255, 255, 0.4) 25%, rgba(255, 255, 255, 0.8) 100%)`
           : undefined,
         boxShadow: entry.color
-          ? `0 20px 40px -15px ${entry.color}15`
+          ? `0 25px 50px -12px ${entry.color}25`
           : '0 20px 40px -20px rgba(0,0,0,0.1)'
       }}
     >
