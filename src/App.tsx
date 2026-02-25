@@ -566,7 +566,7 @@ export default function App() {
 
   const handleUpload = async () => {
     if (!uploadType || !selectedProject) return;
-    if (uploadType !== 'text' && !file) return;
+    if (uploadType !== 'text' && !file && !editingEntry) return;
     if (uploadType === 'text' && !notes.trim()) return;
 
     setUploading(true);
@@ -597,7 +597,7 @@ export default function App() {
 
       const newEntry = {
         type: uploadType,
-        url: finalUrl || (editingEntry ? editingEntry.url : null),
+        url: uploadType === 'text' ? null : (finalUrl || (editingEntry ? editingEntry.url : null)),
         notes: notes,
         timestamp: editingEntry ? editingEntry.timestamp : Date.now(),
         project_id: selectedProject.id,
@@ -1226,18 +1226,27 @@ export default function App() {
                       />
                     </div>
                   ) : (
-                    <div className="relative rounded-3xl overflow-hidden aspect-video bg-slate-50 border border-slate-100 group">
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="relative rounded-3xl overflow-hidden aspect-video bg-slate-50 border border-slate-100 group cursor-pointer"
+                    >
                       {uploadType === 'image' ? (
-                        <img src={previewUrl} className="w-full h-full object-cover" alt="Preview" />
+                        <img src={previewUrl} className="w-full h-full object-cover transition-transform group-hover:scale-105" alt="Preview" />
                       ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-indigo-50 to-rose-50">
                           <Music size={48} className="text-indigo-300" />
                           <p className="text-slate-600 font-bold">音のカケラを読み込みました</p>
                         </div>
                       )}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <div className="flex flex-col items-center gap-2 text-white">
+                          <Plus size={32} />
+                          <span className="text-xs font-bold uppercase tracking-widest">カケラを差し替える</span>
+                        </div>
+                      </div>
                       <button
-                        onClick={() => { setPreviewUrl(null); setFile(null); }}
-                        className="absolute top-4 right-4 p-2 bg-white/90 shadow-lg rounded-full text-slate-600 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => { e.stopPropagation(); setPreviewUrl(null); setFile(null); }}
+                        className="absolute top-4 right-4 p-2 bg-white/90 shadow-lg rounded-full text-slate-600 hover:text-rose-500 transition-colors z-20"
                       >
                         <X size={18} />
                       </button>
