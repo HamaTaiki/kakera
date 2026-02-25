@@ -333,7 +333,7 @@ function ActivityHeatmap({ entries }: { entries: { timestamp: number }[] }) {
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
-  const [view, setView] = useState<'home' | 'project'>('home');
+  const [view, setView] = useState<'home' | 'dashboard' | 'project'>('home');
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [entries, setEntries] = useState<ProgressEntry[]>([]);
@@ -487,6 +487,9 @@ export default function App() {
       setShowCreateProject(false);
       setNewProjectName('');
       setNewProjectDesc('');
+
+      // 作成後はダッシュボードへ遷移して選択状態にする
+      setView('dashboard');
       handleSelectProject(createdProject);
     }
     setUploading(false);
@@ -500,13 +503,18 @@ export default function App() {
   };
 
   const handleBack = () => {
-    // 共有ビューから自分のダッシュボードに戻る際、URLパラメータをクリアする
+    // 共有ビューから戻る際、URLパラメータをクリアする
     if (window.location.search.includes('share=')) {
       window.history.replaceState({}, '', window.location.pathname);
     }
-    setView('home');
-    setSelectedProject(null);
-    setEntries([]);
+
+    if (view === 'project') {
+      setView('dashboard');
+      setSelectedProject(null);
+      setEntries([]);
+    } else {
+      setView('home');
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -681,9 +689,6 @@ export default function App() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <button className="p-2 text-slate-400 hover:text-slate-900 transition-colors">
-            <Search size={22} />
-          </button>
           {!isSharedView && (
             <button
               onClick={() => supabase.auth.signOut()}
@@ -692,15 +697,15 @@ export default function App() {
               Logout
             </button>
           )}
-          {view === 'home' && !isSharedView && (
+          {view !== 'home' && !isSharedView && (
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => setShowCreateProject(true)}
-              className="primary-button"
+              onClick={handleBack}
+              className="secondary-button py-2 px-4 text-xs"
             >
-              <Plus size={20} />
-              <span className="hidden sm:inline">箱を新しく作る</span>
+              <ChevronLeft size={16} />
+              <span>戻る</span>
             </motion.button>
           )}
         </div>
@@ -710,6 +715,7 @@ export default function App() {
         <AnimatePresence mode="wait">
 
           {/* --- Home View (Hero + Story + Project List) --- */}
+          {/* --- Home View (Menu) --- */}
           {view === 'home' && (
             <motion.div
               key="home"
@@ -719,7 +725,7 @@ export default function App() {
               transition={{ duration: 0.4 }}
             >
               {/* Hero Section */}
-              <section className="mb-32 py-12 px-2">
+              <section className="mb-20 py-12 px-2 text-center md:text-left">
                 <motion.div
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -730,35 +736,59 @@ export default function App() {
                     <Sparkles size={14} />
                     <span>創作のカケラ、未来の輝き。</span>
                   </div>
-                  <h2 className="text-5xl md:text-8xl font-black text-slate-900 tracking-tighter leading-none mb-8">
-                    Collect <br />
-                    Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-rose-500">Kakera</span>
+                  <h2 className="text-5xl md:text-8xl font-black text-slate-900 tracking-tighter leading-none mb-12">
+                    Start Your <br />
+                    Creative <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-rose-500">Journey</span>
                   </h2>
-                  <p className="text-xl md:text-2xl text-slate-500 font-medium leading-relaxed max-w-2xl mb-12">
-                    <span className="inline-block text-slate-900 font-bold">完璧じゃなくていい。</span><br />
-                    <span className="inline-block">その一歩、その一瞬。</span><br />
-                    <span className="inline-block">Kakeraは、未完成の美しさを</span>
-                    <span className="inline-block">大切に積み上げていく場所です。</span>
-                  </p>
-                  <div className="flex flex-wrap gap-4 items-center">
-                    <button
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <motion.button
+                      whileHover={{ y: -5, scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => setShowCreateProject(true)}
-                      className="primary-button py-5 px-10 text-lg group"
+                      className="glass-card p-10 text-left group border-none bg-indigo-600 text-white shadow-xl shadow-indigo-200"
                     >
-                      創作を始める
-                      <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                    </button>
-                    <button className="secondary-button py-5 px-8 text-lg">
-                      みんなのカケラを見る
-                      <Search size={20} />
-                    </button>
+                      <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <Plus size={32} />
+                      </div>
+                      <h3 className="text-2xl font-bold mb-2">創作を始める</h3>
+                      <p className="text-indigo-100/80 text-sm">新しい創作箱を作って、最初の一歩を踏み出しましょう。</p>
+                      <ArrowRight size={20} className="mt-8 opacity-0 group-hover:opacity-100 group-hover:translate-x-2 transition-all" />
+                    </motion.button>
+
+                    <motion.button
+                      whileHover={{ y: -5, scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setView('dashboard')}
+                      className="glass-card p-10 text-left group border-none bg-white shadow-xl shadow-slate-200/50"
+                    >
+                      <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center mb-6 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                        <LayoutGrid size={32} />
+                      </div>
+                      <h3 className="text-2xl font-bold text-slate-900 mb-2">創作箱を見る</h3>
+                      <p className="text-slate-500 text-sm">これまでに集めたカケラや、活動の記録を確認します。</p>
+                      <ArrowRight size={20} className="mt-8 text-indigo-600 opacity-0 group-hover:opacity-100 group-hover:translate-x-2 transition-all" />
+                    </motion.button>
+
+                    <motion.button
+                      whileHover={{ y: -5, scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => alert('みんなのカケラ機能は、現在準備中です！お楽しみに💎')}
+                      className="glass-card p-10 text-left group border-none bg-white shadow-xl shadow-slate-200/50"
+                    >
+                      <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center mb-6 text-rose-500 group-hover:bg-rose-500 group-hover:text-white transition-colors">
+                        <Search size={32} />
+                      </div>
+                      <h3 className="text-2xl font-bold text-slate-900 mb-2">探索する</h3>
+                      <p className="text-slate-500 text-sm">他のクリエイターのカケラを見て、刺激をもらいましょう。</p>
+                      <ArrowRight size={20} className="mt-8 text-rose-500 opacity-0 group-hover:opacity-100 group-hover:translate-x-2 transition-all" />
+                    </motion.button>
                   </div>
                 </motion.div>
               </section>
 
               {/* Story Section */}
-              <section className="mb-40 px-2 relative">
-                <div className="absolute -left-12 top-0 w-1 h-full bg-gradient-to-b from-indigo-500/0 via-indigo-500/20 to-rose-500/0 hidden md:block" />
+              <section className="mb-20 px-2 relative">
                 <div className="max-w-3xl">
                   <motion.div
                     initial={{ opacity: 0, x: -20 }}
@@ -770,95 +800,55 @@ export default function App() {
                       <Heart size={24} fill="currentColor" className="text-rose-400" />
                       <span className="text-sm font-bold uppercase tracking-[0.2em]">Our Thought</span>
                     </div>
-                    <h3 className="text-3xl md:text-5xl font-black text-slate-900 mb-10 leading-tight tracking-tight uppercase">
-                      「完璧な作品」の陰に、<br />
-                      隠したままの想いはありませんか？
-                    </h3>
-
-                    <div className="space-y-8 text-slate-600 text-lg md:text-xl leading-relaxed font-medium">
+                    <div className="space-y-6 text-slate-600 text-lg leading-relaxed font-medium overflow-hidden">
                       <p>
-                        <span className="inline-block">世の中に溢れているのは、</span>
-                        <span className="inline-block">磨き上げられた「完成品」ばかり。</span><br />
-                        <span className="inline-block">それを見て、自分の未完成なプロセスを</span>
-                        <span className="inline-block">恥じて、隠してしまっていませんか？</span>
+                        Kakeraは、未完成な美しさを「いま、ここにある価値」として愛でるための場所です。あなたのひたむきなプロセスが、いつか誰かの光になるように。
                       </p>
-                      <div className="pl-6 border-l-4 border-indigo-100 py-2">
-                        <Quote className="text-indigo-200 mb-4" size={32} />
-                        <p className="text-slate-900 font-bold">
-                          <span className="inline-block">創作の本当の価値は、完成品の中だけでなく</span><br />
-                          <span className="inline-block">そこに至るまでの「カケラ」のような</span>
-                          <span className="inline-block">日々に宿っています。</span>
-                        </p>
-                      </div>
-                      <p>
-                        <span className="inline-block">迷い、悩み、挑戦した証。</span><br />
-                        <span className="inline-block">Kakeraは、未完成な美しさを</span>
-                        <span className="inline-block">「いま、ここにある価値」として</span>
-                        <span className="inline-block">愛でるための場所です。</span>
-                      </p>
-                      <p>
-                        <span className="inline-block">あなたのひたむきなプロセスが、</span>
-                        <span className="inline-block">いつか誰かの光になるように。</span>
-                      </p>
-                    </div>
-
-                    <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
-                      <div className="glass-card p-6 bg-indigo-50/30 border-none">
-                        <Zap size={24} className="text-indigo-500 mb-4" />
-                        <h4 className="font-bold text-slate-900 mb-2">記録する</h4>
-                        <p className="text-sm text-slate-500">飾らない、剥き出しのアイデアをありのままに。</p>
-                      </div>
-                      <div className="glass-card p-6 bg-rose-50/30 border-none">
-                        <Compass size={24} className="text-rose-500 mb-4" />
-                        <h4 className="font-bold text-slate-900 mb-2">見つける</h4>
-                        <p className="text-sm text-slate-500">完璧な作品にはない、人間らしい葛藤を。</p>
-                      </div>
-                      <div className="glass-card p-6 bg-slate-50 border-none">
-                        <Sparkles size={24} className="text-amber-500 mb-4" />
-                        <h4 className="font-bold text-slate-900 mb-2">輝かせる</h4>
-                        <p className="text-sm text-slate-500">未完成なカケラが、誰かの力に変わる。</p>
-                      </div>
                     </div>
                   </motion.div>
                 </div>
               </section>
+            </motion.div>
+          )}
 
-              <div className="mb-10 px-2">
-                <div className="flex items-center justify-between mb-8">
-                  <div className="flex items-center gap-3">
-                    <LayoutGrid size={24} className="text-indigo-600" />
-                    <h3 className="text-2xl font-bold text-slate-900 tracking-tight">あなたの創作箱</h3>
-                  </div>
+          {/* --- Dashboard View (Heatmap + Projects) --- */}
+          {view === 'dashboard' && (
+            <motion.div
+              key="dashboard"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.02 }}
+              transition={{ duration: 0.4 }}
+            >
+              <div className="flex items-center justify-between mb-12">
+                <div className="flex items-center gap-4">
+                  <LayoutGrid size={32} className="text-indigo-600" />
+                  <h2 className="text-4xl font-black text-slate-900 tracking-tight">ダッシュボード</h2>
                 </div>
-
-                {projects.length > 0 && <ActivityHeatmap entries={allEntries} />}
+                <button
+                  onClick={() => setShowCreateProject(true)}
+                  className="primary-button py-3 px-6"
+                >
+                  <Plus size={20} />
+                  <span>新しい箱</span>
+                </button>
               </div>
 
-              {loading ? (
-                <div className="flex justify-center py-20">
-                  <Loader2 className="animate-spin text-indigo-200" size={48} />
-                </div>
-              ) : projects.length === 0 ? (
-                <div
-                  onClick={() => setShowCreateProject(true)}
-                  className="glass-card py-20 px-8 text-center cursor-pointer hover:bg-white transition-all group border-2 border-dashed border-slate-100 hover:border-indigo-200"
-                >
-                  <div className="w-20 h-20 rounded-3xl bg-indigo-50 flex items-center justify-center text-indigo-400 mx-auto mb-8 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                    <FolderPlus size={40} />
+              <ActivityHeatmap entries={allEntries} />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {projects.length === 0 ? (
+                  <div
+                    onClick={() => setShowCreateProject(true)}
+                    className="col-span-full glass-card py-20 px-8 text-center cursor-pointer hover:bg-white transition-all group border-2 border-dashed border-slate-100 hover:border-indigo-200"
+                  >
+                    <FolderPlus size={40} className="mx-auto mb-6 text-indigo-400 group-hover:text-indigo-600" />
+                    <h4 className="text-xl font-bold text-slate-900 mb-2">まだ創作箱がありません</h4>
+                    <p className="text-slate-500 mb-8 text-sm">最初の箱を名前をつけて作りましょう。</p>
+                    <button className="primary-button mx-auto py-3 px-8 text-sm">最初の箱を作る</button>
                   </div>
-                  <h4 className="text-2xl font-bold text-slate-900 mb-4">まだ創作箱がありません</h4>
-                  <p className="text-slate-500 max-w-md mx-auto mb-10 leading-relaxed text-lg">
-                    世に出す前の、あなただけの大切な「プロセス」を<br />
-                    収めるための箱を、まずは名前をつけて作りましょう。
-                  </p>
-                  <button className="primary-button mx-auto py-5 px-12 text-lg">
-                    <Plus size={24} />
-                    <span>最初の箱を作る</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {projects.map((project) => (
+                ) : (
+                  projects.map((project) => (
                     <ProjectCard
                       key={project.id}
                       project={project}
@@ -868,9 +858,9 @@ export default function App() {
                         handleDeleteProject(project.id);
                       }}
                     />
-                  ))}
-                </div>
-              )}
+                  ))
+                )}
+              </div>
             </motion.div>
           )}
 
