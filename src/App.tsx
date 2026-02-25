@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Plus, Image as ImageIcon, Music, Send, X, Play, Pause, Clock, Loader2, AlertCircle, LayoutGrid, FolderPlus, ChevronLeft, ArrowRight, Layers, Sparkles, Rocket, Zap, Gem, Diamond, Search, Heart, Quote, Compass, Trash2 } from 'lucide-react';
+import { Plus, Image as ImageIcon, Music, Send, X, Play, Pause, Clock, Loader2, AlertCircle, LayoutGrid, FolderPlus, ChevronLeft, ArrowRight, Layers, Sparkles, Rocket, Zap, Gem, Diamond, Search, Heart, Quote, Compass, Trash2, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
 import { User } from '@supabase/supabase-js';
@@ -21,6 +21,7 @@ interface ProgressEntry {
   timestamp: number;
   project_id: string;
   user_id?: string;
+  is_public?: boolean;
 }
 
 // --- Components ---
@@ -333,12 +334,14 @@ function ActivityHeatmap({ entries }: { entries: { timestamp: number }[] }) {
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
-  const [view, setView] = useState<'home' | 'dashboard' | 'project'>('home');
+  const [view, setView] = useState<'home' | 'dashboard' | 'project' | 'public'>('home');
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [entries, setEntries] = useState<ProgressEntry[]>([]);
   const [allEntries, setAllEntries] = useState<{ timestamp: number }[]>([]);
+  const [publicEntries, setPublicEntries] = useState<ProgressEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [publicLoading, setPublicLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [showCreateProject, setShowCreateProject] = useState(false);
@@ -347,6 +350,7 @@ export default function App() {
   const [newProjectDesc, setNewProjectDesc] = useState('');
 
   const [uploadType, setUploadType] = useState<'image' | 'audio' | 'text' | null>(null);
+  const [isPublic, setIsPublic] = useState(false);
   const [notes, setNotes] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -448,7 +452,7 @@ export default function App() {
   const fetchEntries = async (projectId: string) => {
     const { data, error } = await supabase
       .from('progress_entries')
-      .select('id, type, url, notes, timestamp, project_id, user_id')
+      .select('id, type, url, notes, timestamp, project_id, user_id, is_public')
       .eq('project_id', projectId)
       .order('timestamp', { ascending: false });
 
@@ -456,6 +460,24 @@ export default function App() {
       console.error('Error fetching entries:', error);
     } else {
       setEntries(data || []);
+    }
+  };
+
+  const fetchPublicEntries = async () => {
+    setPublicLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('progress_entries')
+        .select('id, type, url, notes, timestamp, project_id, user_id, is_public')
+        .eq('is_public', true)
+        .order('timestamp', { ascending: false });
+
+      if (error) throw error;
+      setPublicEntries(data || []);
+    } catch (error) {
+      console.error('Error fetching public entries:', error);
+    } finally {
+      setPublicLoading(false);
     }
   };
 
@@ -512,6 +534,8 @@ export default function App() {
       setView('dashboard');
       setSelectedProject(null);
       setEntries([]);
+    } else if (view === 'public') {
+      setView('home');
     } else {
       setView('home');
     }
@@ -565,13 +589,14 @@ export default function App() {
         notes: notes,
         timestamp: Date.now(),
         project_id: selectedProject.id,
-        user_id: user?.id
+        user_id: user?.id,
+        is_public: isPublic
       };
 
       const { data: uploadData, error: dbError } = await supabase
         .from('progress_entries')
         .insert([newEntry])
-        .select('id, type, url, notes, timestamp, project_id, user_id');
+        .select('id, type, url, notes, timestamp, project_id, user_id, is_public');
 
       if (dbError) throw dbError;
 
@@ -590,6 +615,7 @@ export default function App() {
         setPreviewUrl(null);
       }
       setUploadType(null);
+      setIsPublic(false);
 
       // input要素をリセット
       if (fileInputRef.current) {
@@ -779,11 +805,14 @@ export default function App() {
                     <motion.button
                       whileHover={{ y: -5, scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={() => alert('みんなのカケラ機能は、現在準備中です！お楽しみに💎')}
+                      onClick={() => {
+                        fetchPublicEntries();
+                        setView('public');
+                      }}
                       className="glass-card p-10 text-left group border-none bg-white shadow-xl shadow-slate-200/50"
                     >
                       <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center mb-6 text-rose-500 group-hover:bg-rose-500 group-hover:text-white transition-colors">
-                        <Search size={32} />
+                        <Globe size={32} />
                       </div>
                       <h3 className="text-2xl font-bold text-slate-900 mb-2">みんなのかけらを見る</h3>
                       <p className="text-slate-500 text-sm">他のクリエイターのカケラを見て、刺激をもらいましょう。</p>
@@ -912,6 +941,47 @@ export default function App() {
                   ))
                 )}
               </div>
+            </motion.div>
+          )}
+
+          {/* --- Everyone's Kakeras View --- */}
+          {view === 'public' && (
+            <motion.div
+              key="public"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.02 }}
+              transition={{ duration: 0.4 }}
+            >
+              <div className="flex items-center justify-between mb-12">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-rose-50 flex items-center justify-center text-rose-500 shadow-sm shadow-rose-100">
+                    <Globe size={24} />
+                  </div>
+                  <h2 className="text-4xl font-black text-slate-900 tracking-tight">みんなのかけら</h2>
+                </div>
+              </div>
+
+              {publicLoading ? (
+                <div className="flex flex-col items-center justify-center py-32 gap-4">
+                  <Loader2 className="animate-spin text-indigo-200" size={48} />
+                  <p className="text-slate-400 font-bold animate-pulse text-sm">世界中のカケラを集めています...</p>
+                </div>
+              ) : publicEntries.length === 0 ? (
+                <div className="glass-card py-32 text-center border-dashed bg-white/30 border-slate-200 shadow-none">
+                  <Sparkles size={48} className="mx-auto mb-6 text-slate-200" />
+                  <p className="text-slate-400 text-lg">まだ公開されているカケラがありません。</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {publicEntries.map((entry) => (
+                    <ProgressCard
+                      key={entry.id}
+                      entry={entry}
+                    />
+                  ))}
+                </div>
+              )}
             </motion.div>
           )}
 
@@ -1141,6 +1211,25 @@ export default function App() {
                     placeholder="カケラについての説明や、今の気づきを自由に..."
                     className="input-field min-h-[120px] resize-none"
                   />
+                </div>
+
+                <div className="flex items-center gap-3 p-4 rounded-2xl bg-indigo-50/50 border border-indigo-100/50">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Globe size={16} className="text-indigo-600" />
+                      <span className="text-sm font-bold text-slate-700">みんなのカケラに共有する</span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 leading-tight">チェックを入れると、全てのユーザーにこのカケラが公開されます。</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={isPublic}
+                      onChange={(e) => setIsPublic(e.target.checked)}
+                    />
+                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                  </label>
                 </div>
 
                 <div className="flex gap-4">
