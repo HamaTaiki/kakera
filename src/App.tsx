@@ -271,7 +271,7 @@ function ProgressCard({ entry, onEdit, onDelete }: { entry: ProgressEntry; onEdi
         <div className={`flex-1 p-8 flex flex-col justify-between ${entry.type === 'text' ? 'bg-gradient-to-br from-indigo-50/30 to-rose-50/30' : ''}`}>
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <span className={`text-[10px] font-bold px-3 py-1 rounded-full backdrop-blur-sm border border-current/10 ${entry.type === 'image' ? 'bg-indigo-500/10 text-indigo-600' :
+              <span className={`text-[10px] font-bold px-3 py-1 rounded-full backdrop-blur-md border border-current/10 ${entry.type === 'image' ? 'bg-indigo-500/10 text-indigo-600' :
                 entry.type === 'audio' ? 'bg-rose-500/10 text-rose-600' :
                   'bg-slate-500/10 text-slate-600'
                 }`}>
@@ -283,7 +283,7 @@ function ProgressCard({ entry, onEdit, onDelete }: { entry: ProgressEntry; onEdi
                   if (!cat) return null;
                   const Icon = cat.icon;
                   return (
-                    <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-3 py-1 rounded-full bg-white/40 backdrop-blur-sm ${cat.color} border border-white/20 shadow-sm`}>
+                    <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-3 py-1 rounded-full bg-white/60 backdrop-blur-xl ${cat.color} border border-white/40 shadow-sm ring-1 ring-black/5`}>
                       <Icon size={12} />
                       {cat.label}
                     </span>
