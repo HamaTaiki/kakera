@@ -553,7 +553,7 @@ export default function App() {
 
       const newEntry = {
         type: uploadType,
-        url: finalUrl || undefined,
+        url: finalUrl || null,
         notes: notes,
         timestamp: Date.now(),
         project_id: selectedProject.id,
@@ -1108,7 +1108,7 @@ export default function App() {
                   </button>
                   <button
                     onClick={handleUpload}
-                    disabled={!file || uploading}
+                    disabled={(uploadType !== 'text' && !file) || (uploadType === 'text' && !notes.trim()) || uploading}
                     className="primary-button flex-[2] py-5"
                   >
                     {uploading ? <Loader2 className="animate-spin" /> : <Diamond size={20} />}
